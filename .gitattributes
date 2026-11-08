@@ -1,0 +1,23 @@
+# 在仓库层面统一行尾，让 Windows clone 与 Linux clone
+# 得到字节一致的脚本。否则以 CRLF 检出的 shell 钩子
+# 会死于 "\r: command not found" —— 钩子随即静默失效，
+# 而学号规则是硬性评分要求。
+* text=auto eol=lf
+
+# PowerShell 必须保留 CRLF：Windows PowerShell 5.1 会误读纯 LF 的脚本。
+*.ps1 text eol=crlf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# 钩子由 sh 执行，所以无论什么平台都必须是 LF。
+.githooks/* text eol=lf
+*.sh text eol=lf
+.gitmessage text eol=lf
+
+# 二进制：永不 diff、永不转换。
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.pdf binary
+*.pt binary
+*.pth binary

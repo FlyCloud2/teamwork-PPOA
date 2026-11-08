@@ -1,0 +1,47 @@
+# ---- 我们确实要提交的东西 ---------------------------------------------------
+# runs/<id>/progress.csv、config.json、stdout.log 是刻意提交的：
+# 「每个报出的数字都能追溯到仓库日志」占分 30%。
+# 不要把整个 runs/ 加进本文件。
+
+# ---- 绝不提交的产物 --------------------------------------------------------
+runs/*/model*
+runs/*/*.mp4
+runs/*/videos/
+runs/*/tensorboard/
+runs/*/checkpoints/
+*.tfevents.*
+wandb/
+data/
+datasets/
+*.zip
+*.tar.gz
+*.tgz
+*.7z
+
+# ---- 环境与缓存 -----------------------------------------------------------
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ipynb_checkpoints/
+.DS_Store
+Thumbs.db
+
+# ---- 凭据 -----------------------------------------------------------------
+# 粘进被跟踪文件的 token 就是已经泄露的 token，私有仓库也不例外。
+.env
+.env.*
+*.key
+*.pem
+secrets.*
+wandb_key.txt
+
+# ---- 日志 -----------------------------------------------------------------
+# run 自己的 stdout.log 是证据，下面会被重新包含；
+# 其他日志都是噪声。
+*.log
+!runs/*/stdout.log
+env.txt.bak

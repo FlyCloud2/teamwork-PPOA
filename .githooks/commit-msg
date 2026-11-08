@@ -1,0 +1,55 @@
+#!/bin/sh
+# commit-msg 钩子 —— 首行无法归属到人的提交，直接拒绝。
+#
+# 为什么：周检要求 (a) 每条 commit 信息都带学号，
+# (b) 每位成员都有自己实质性的 commit。这两条规则一年只会被忘一次，
+# 就在周日 23:50，那时已经没有时间补救。
+# 所以检查做成机械的，并且会拦住提交。
+#
+# 启用（每个 clone 一次）：
+#   git config core.hooksPath .githooks
+#
+# 首行格式示例：[2250025281 张三] feat: 统一 runner 与 CSV 证据链
+
+# head / grep 在 Git 的 usr/bin 里。git 跑钩子时会把它放进 PATH，
+# 但被裁过的 PATH（IDE 终端、CI、或手工执行本文件）不会 —— 而一个
+# 读不到信息的钩子会放行所有坏提交，同时表面上一切正常。
+PATH="/usr/bin:/mingw64/bin:/bin:$PATH"
+export PATH
+
+msg=$(head -n 1 "$1")
+
+if ! printf '%s' "$msg" | grep -Eq '[0-9]{9,12}'; then
+    echo "✗ commit 首行缺少 9-12 位学号：" >&2
+    echo "    got: $msg" >&2
+    echo "  want: [2250025281 张三] feat: 一句话说明改了什么" >&2
+    echo "  （模板见 .gitmessage；已提交的坏 message 用 git commit --amend 修）" >&2
+    exit 1
+fi
+
+# 占位符绝不能进历史：它们看起来合规，其实不是。
+#
+# 这里范围很关键。早先的版本在整条首行里扫 学号|姓名，
+# 于是拒绝了一条本来完全合规、只是描述了这条规则的提交（chore: ...学号钩子）。
+# 占位符只可能出现在该写身份的地方，所以：
+#   - <name> / <date> 是未替换的模板记号，出现在哪里都拒；
+#   - 学号 / 姓名 是普通中文词，只在方括号身份前缀里拒，
+#     因为出现在那里就意味着「没人填」。
+if printf '%s' "$msg" | grep -Eq '<name>|<date>'; then
+    echo "✗ commit 首行含未替换的模板占位符 <name> / <date>" >&2
+    echo "    got: $msg" >&2
+    exit 1
+fi
+
+prefix=""
+case "$msg" in
+    \[*\]*) prefix="${msg%%]*}"; prefix="${prefix#\[}" ;;
+esac
+if printf '%s' "$prefix" | grep -Eq '学号|姓名'; then
+    echo "✗ 方括号里还是占位文字（学号/姓名），换成 学号 + 真实姓名" >&2
+    echo "    got: $msg" >&2
+    echo "  want: [2250025281 张三] feat: 一句话说明改了什么" >&2
+    exit 1
+fi
+
+exit 0

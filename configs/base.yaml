@@ -1,0 +1,59 @@
+# 超参与实验矩阵，按「记录」而非「配置」的角色存在。
+# scripts/run.py 是唯一真源：它把每个值显式传上命令行，
+# 并把解析后的值写进 runs/<id>/config.json。本文件
+# 存在的意义，是让读者（或报告的方法一节）不用读 argparse 就能在一屏内
+# 看清整体设计。两者若有一天冲突，以 config.json 为准。
+#
+# 数值出处：PPO 论文 arXiv:1707.06347v2 Table 3（「MuJoCo 任务的超参数」），
+# 另有标注者除外。与论文的偏差清单在 docs/deviations.md。
+
+paper_table_3:            # Table 3 中共享超参那一列
+  learning_rate: 3.0e-4
+  adam_eps: 1.0e-5
+  hidden_sizes: [64, 64]
+  activation: tanh
+  orthogonal_init: true   # 策略 std 初始 0.01，价值输出初始 1.0 -> 见 layer_init()
+  timesteps_per_actor: 2048   # 论文里的 T
+  minibatch_size: 64          # 论文里的 M；CleanRL 暴露的是 num_minibatches = T*N/M = 32
+  update_epochs: 10           # 论文里的 K
+  gamma: 0.99
+  gae_lambda: 0.95
+  clip_coef: 0.2              # 式(7) 里的 epsilon
+  entropy_coef: 0.0
+  value_coef: 0.5
+  max_grad_norm: 0.5          # 全局梯度范数裁剪
+  advantage_normalization: per_minibatch
+  value_loss_clipping: true   # 论文不裁剪价值损失，CleanRL 裁（属偏差）
+
+# 实验矩阵。刻意缩小尺度：每个变体 3 环境 x 3 种子 = 9 次，
+# 而不是论文的 7 环境 x 3 种子 x 11 组配置。
+matrix:
+  envs: [HalfCheetah-v4, Hopper-v4, Walker2d-v4]   # 论文 7 个里的 3 个
+  seeds: [0, 1, 2]                                  # 评分要求的最低值就是 3
+  total_timesteps: 1000000                          # 每个环境，与论文一致
+  smoke_timesteps: 20000                            # 只用于 W1 验证管线，永不进入报告
+
+# 代理目标变体。用字符串（而不是布尔）保存，这样 W3 增加
+# 自适应 eps / 非对称裁剪时不用改 schema。
+variants:
+  clip0.2:      {desc: "paper default, epsilon = 0.2", flags: ["--clip-coef", "0.2"]}
+  noclip:       {desc: "epsilon -> 1e9: the clipped surrogate degenerates to vanilla PG",
+                 flags: ["--clip-coef", "1000000000.0"]}
+  adaptiveKL:   {desc: "paper's other surrogate: early-stop epochs once approx_kl > 0.01",
+                 flags: ["--clip-coef", "0.2", "--target-kl", "0.01"]}
+
+# 在 env.txt 那台机器上实测的执行参数（不来自论文）。
+execution:
+  device: cpu             # 在 2x64 MLP、2048 步 batch 上实测 313 SPS。
+                          # GPU 在 W1 没有做基准测试；这是 W2 的待定问题
+                          # （见 docs/setup.md 的「待定问题」），不是测出来的劣化。
+  threads: 4              # 为了可复现而钉死：OMP 线程数会改变
+                          # 浮点归约顺序。A/B 的速度差异属噪声。
+  expected_wall_time_s: {smoke_20k: 62, full_1M: 3300}   # 100 万步估算 = 1e6 / 313 SPS + 启动开销
+
+# 报告的 Results 一节必须能追溯到的观测指标。
+logging:
+  csv: progress.csv       # 每次更新一行，由 src/ppo_continuous_action.py 写出
+  columns: [global_step, episode_return, episode_length, policy_loss, value_loss,
+            entropy, approx_kl, clipfrac, explained_variance, learning_rate, wall_time_s]
+  tensorboard: true       # 只落 events/；二进制，已 gitignore

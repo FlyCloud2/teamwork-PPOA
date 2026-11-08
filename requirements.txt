@@ -1,0 +1,27 @@
+# 刻意用 == 钉死：没钉版本的环境复现不出任何一个数字。
+# 以下版本都是在 env.txt 记录的那台机器上解出来的；可用下面的命令复核：
+#   python scripts/collect_env.py
+#
+# Windows 上安装顺序有讲究：
+#   1) 先装 python 3.10（3.12+ 没有 distutils 兼容层，CleanRL 的 strtobool 导入会失败；
+#      而且我们钉的 torch 没有对应的 cp3xx wheel）
+#   2) 再装 torch，走 CUDA 源 —— PyPI 上的 Windows wheel 是 CPU 版：
+#        pip install torch==2.4.1 --index-url https://download.pytorch.org/whl/cu121
+#   3) 其余都从本文件装
+
+# --- 深度学习 ---------------------------------------------------------------
+torch==2.4.1            # 本地是 2.4.1+cu121；钉死是因为 vendored 训练器是在它上面验证的。
+                        # Windows 上别从 PyPI 装（那是 CPU 版）。
+# --- 环境 -------------------------------------------------------------------
+gymnasium==0.29.1       # 不能用 1.0：CleanRL 的包装链调用 TransformObservation
+                        # 只传 2 个参数，这在 gymnasium 1.0 里已失效（坑 #2）
+mujoco==3.1.6           # pip wheel，无需系统级安装 MuJoCo
+imageio==2.38.0         # gymnasium 的 mujoco 渲染无条件导入它，
+                        # 却从不把它声明为依赖（坑 #3）
+cloudpickle==3.1.2      # gymnasium 的向量化环境需要它来 pickle 包装器
+# --- 数值与日志 -------------------------------------------------------------
+numpy==1.26.4           # 2.x 会破坏 torch 2.4.1 的编译扩展
+pandas==2.2.3           # CSV -> 表格/图
+matplotlib==3.9.2       # 出图
+tensorboard==2.17.1     # vendored 训练器 SummaryWriter 的目标
+tqdm==4.66.5            # 子进程里的进度条
