@@ -1,14 +1,6 @@
-# 刻意用 == 钉死：没钉版本的环境复现不出任何一个数字。
-# 以下版本都是在 env.txt 记录的那台机器上解出来的；可用下面的命令复核：
-#   python scripts/collect_env.py
-#
-# Windows 上安装顺序有讲究：
-#   1) 先装 python 3.10（3.12+ 没有 distutils 兼容层，CleanRL 的 strtobool 导入会失败；
-#      而且我们钉的 torch 没有对应的 cp3xx wheel）
-#   2) 再装 torch，走 CUDA 源 —— PyPI 上的 Windows wheel 是 CPU 版：
-#        pip install torch==2.4.1 --index-url https://download.pytorch.org/whl/cu121
-#   3) 其余都从本文件装
-
+# W2 runtime pins. Python 3.10; install from PyPI for the CPU baseline.
+# On Windows, use an ASCII-only virtualenv path for MuJoCo XML loading.
+# Full resolved dependency snapshot: requirements-lock.txt and env.txt.
 # --- 深度学习 ---------------------------------------------------------------
 torch==2.4.1            # 本地是 2.4.1+cu121；钉死是因为 vendored 训练器是在它上面验证的。
                         # Windows 上别从 PyPI 装（那是 CPU 版）。

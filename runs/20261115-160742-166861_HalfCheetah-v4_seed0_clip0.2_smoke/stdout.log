@@ -1,0 +1,21 @@
+device=cpu, torch_threads=1
+Traceback (most recent call last):
+  File "D:\桌面\teamwork-PPOA-main\src\ppo_continuous_action.py", line 151, in <module>
+    envs = gym.vector.SyncVectorEnv(
+  File "D:\桌面\teamwork-PPOA-main\.venv\lib\site-packages\gymnasium\vector\sync_vector_env.py", line 53, in __init__
+    self.envs = [env_fn() for env_fn in env_fns]
+  File "D:\桌面\teamwork-PPOA-main\.venv\lib\site-packages\gymnasium\vector\sync_vector_env.py", line 53, in <listcomp>
+    self.envs = [env_fn() for env_fn in env_fns]
+  File "D:\桌面\teamwork-PPOA-main\src\ppo_continuous_action.py", line 62, in thunk
+    env = gym.make(env_id)
+  File "D:\桌面\teamwork-PPOA-main\.venv\lib\site-packages\gymnasium\envs\registration.py", line 802, in make
+    env = env_creator(**env_spec_kwargs)
+  File "D:\桌面\teamwork-PPOA-main\.venv\lib\site-packages\gymnasium\envs\mujoco\half_cheetah_v4.py", line 182, in __init__
+    MujocoEnv.__init__(
+  File "D:\桌面\teamwork-PPOA-main\.venv\lib\site-packages\gymnasium\envs\mujoco\mujoco_env.py", line 360, in __init__
+    super().__init__(
+  File "D:\桌面\teamwork-PPOA-main\.venv\lib\site-packages\gymnasium\envs\mujoco\mujoco_env.py", line 72, in __init__
+    self.model, self.data = self._initialize_simulation()
+  File "D:\桌面\teamwork-PPOA-main\.venv\lib\site-packages\gymnasium\envs\mujoco\mujoco_env.py", line 380, in _initialize_simulation
+    model = mujoco.MjModel.from_xml_path(self.fullpath)
+ValueError: mjParseXML: resource not found via provider or OS filesystem: 'D:\桌面\teamwork-PPOA-main\.venv\lib\site-packages\gymnasium\envs\mujoco\assets\half_cheetah.xml'

@@ -5,9 +5,10 @@ Course project (teamwork-PPOA). We reproduce **Proximal Policy Optimization**
 and we ask whether the paper's central claim about *which surrogate objective works*
 survives our own measurements.
 
-> **Status: week 1 of 7 (11/02 - 11/08), in progress.** The repository skeleton, the vendored trainer
-> and the run/logging pipeline exist; the experiment matrix has not started. Nothing in
-> this README is a result — see [Roadmap](#roadmap) for what is due when.
+> **Status: W2 baseline verified locally.** All three environments completed
+> exactly 1,000,000 steps at seed 0, with 489 updates each. See the
+> [generated evidence report](w2_baseline.md). The W3 multi-seed comparison has
+> not started. Remote delivery is pending write access to the target repository.
 
 ## What the paper claims, and what we test
 
@@ -34,7 +35,7 @@ shows up as a difference in *ordering*, not as "our number is lower".
   scale, stated as such — the report never compares our cells with the paper's cells.
 * **Absolute scores are not comparable** with the paper: the wrappers, the MuJoCo
   version and the framework all differ, and each difference is recorded in
-  [`docs/deviations.md`](docs/deviations.md) before the experiment that needs it.
+  [deviations](deviations.md) before the experiment that needs it.
 * **No bit-for-bit reproduction** is claimed. Three seeds per configuration; we report
   mean +/- std and interpret the ordering, not the digits.
 
@@ -59,79 +60,52 @@ member pushes their own substantive commit before it.
 
 ## Quick start
 
-Python 3.10, versions pinned with `==` in [`requirements.txt`](requirements.txt); the
-machine and every installed distribution are in [`env.txt`](env.txt).
+Use Python 3.10. On Windows, put the virtual environment in an ASCII-only path;
+MuJoCo 3.1.6 failed to load XML assets from the Chinese environment path on the
+actual test machine. Follow [setup notes](setup.md). Runtime versions are in
+[requirements.txt](../requirements.txt); the full tested dependency set is in
+[requirements-lock.txt](../requirements-lock.txt) and [env.txt](../env.txt).
 
 ```powershell
-python -m pip install torch==2.4.1 --index-url https://download.pytorch.org/whl/cu121
-python -m pip install -r requirements.txt
-
-python scripts/run.py --env HalfCheetah-v4 --seed 0 --variant clip0.2 --smoke
-python scripts/plot.py --run runs/<run_id> --out figures/w1_smoke_HalfCheetah.png
+python -m pip install -r requirements-lock.txt
+python scripts/run.py --env HalfCheetah-v4 --seed 0 --variant clip0.2 --smoke --threads 1
+python scripts/plot.py --run runs/<run_id> --out figures/smoke.png
+python -m unittest discover -s tests -v
+python scripts/run_baseline.py --jobs 3 --threads 1
+python scripts/verify_runs.py --baseline
+python scripts/plot.py --baseline --out figures/w2_baseline.png
+python scripts/summarize_baseline.py
 ```
 
-**Expected output and duration**
+Use `--jobs 1` for sequential execution. The matrix entry point defaults to one
+thread per process; the single-run entry point retains its previous four-thread
+default. CPU is the default device; `--cuda true` explicitly requests CUDA and
+fails when unavailable. No CUDA performance comparison is claimed.
 
-| Command | Steps | Expected wall time | Output |
-|---|---|---|---|
-| `run.py --smoke` | 20,000 (9 updates) | about a minute | `runs/<id>/progress.csv` with 9 rows, `config.json`, `stdout.log` |
-| `run.py` (full) | 1,000,000 | ~55 min on the reference machine | ~488 updates, one row each |
+The smoke run consumes exactly 20,000 steps (10 updates); the full run consumes
+exactly 1,000,000 steps (489 updates). The last full-run rollout has 576 samples
+and 32 minibatches of 18 samples. This differs from the vendored floor-budget
+loop; see [deviations](deviations.md). The measured smoke took approximately
+91 seconds including startup; full-run durations are recorded in their configs.
 
-Each run is self-describing; that is the point of the repository:
+`python scripts/run.py --help` lists all exposed training flags, including epoch
+count, rollout shape, optimizer, GAE, clipping, network widths/activation and
+boolean toggles. Runner and trainer share one parser, so `config.json` records
+actual child arguments instead of copied constants. `--dry-run` writes no run
+artifacts. `--output-root` isolates test output.
 
-```
-runs/20261030-1247_HalfCheetah-v4_seed0_clip0.2_smoke/
-├─ config.json     argv, resolved hyperparameters, git commit, host, wall time, rc
-├─ progress.csv    one row per update: return, losses, approx_kl, clipfrac, ...
-├─ stdout.log      raw console output of the child process
-└─ tensorboard/    event files, gitignored (binary, unreadable in a diff)
-```
+Each run directory contains `config.json`, `progress.csv`, `stdout.log` and an
+ignored `tensorboard/` directory. The config includes source SHA-256 hashes,
+package versions, requested/actual counts and running/completed/failed status.
+The locked index `logs/runs.csv` supports concurrent runs. The acceptance manifest
+`logs/w2_baseline.json` includes only the three verified full baselines; failed
+and smoke attempts remain indexed separately.
 
-## Repository layout
+**Variant boundary:** W2 accepts only `clip0.2`. Legacy `adaptiveKL` was KL early
+stopping, not an adaptive penalty, so that misleading flag now fails explicitly.
+The approximation is available as `kl-early-stop`; an actual adaptive penalty
+remains W3 work. Use `--variant custom` for a non-default clipping coefficient.
 
-```
-src/ppo_continuous_action.py   vendored CleanRL PPO + [REPRO] logging hooks
-scripts/run.py                 the only entry point that runs training
-scripts/plot.py                progress.csv -> PNG (figures are never hand-drawn)
-scripts/make_table.py          runs -> paper-vs-ours table
-scripts/collect_env.py         machine + library snapshot -> env.txt
-scripts/weekly_check.ps1       pre-push audit mapped to the grading rules
-configs/base.yaml              paper Table 3 + experiment matrix, as recorded
-docs/setup.md                  what actually happened while installing
-docs/deviations.md             every difference from the paper
-runs/                          committed evidence, one directory per run
-logs/runs.csv                  index of every run
-```
-
-## Rules this repository enforces on itself
-
-1. One command in, one self-describing run directory out — no manually assembled logs.
-2. No hard-coded paths and no hard-coded hyperparameters; the runner passes and records
-   them, and `config.json` is the single source of truth for what actually ran.
-3. Every figure is generated by a script from a committed CSV.
-4. Every number in the report traces back to a committed `progress.csv`.
-5. Every deviation from the paper is written down *before* the experiment, in
-   [`docs/deviations.md`](docs/deviations.md), not explained away afterwards.
-
-## Upstream code and licence
-
-`src/ppo_continuous_action.py` is CleanRL's `ppo_continuous_action.py` at commit
-`cf20043b852deedf52dc9f90a325c6866d599005`, vendored rather than installed so the
-algorithm cannot move under our results. All local modifications are marked `[REPRO]` in
-the source and itemised in [`MODIFICATIONS.md`](MODIFICATIONS.md). Upstream licence (MIT)
-in [`LICENSES/cleanrl-LICENSE.txt`](LICENSES/cleanrl-LICENSE.txt); our code is MIT, see
-[`LICENSE`](LICENSE).
-
-## Team
-
-| Student ID | Name | Focus |
-|---|---|---|
-| 待填 | 待填 | 待填 |
-| 待填 | 待填 | 待填 |
-| 待填 | 待填 | 待填 |
-
-## AI usage
-
-Code and prose here are drafted with the help of an AI assistant; no experimental result
-is produced by it. The per-file record, including what each member reviewed and ran, is
-in [`AI_USAGE.md`](AI_USAGE.md).
+Raw training returns sampled at update boundaries are not evaluation scores.
+Single-seed results do not establish the C1 ordering. AI assistance and the
+pending human sign-off are recorded in [AI_USAGE.md](../AI_USAGE.md).

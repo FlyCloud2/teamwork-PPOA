@@ -45,3 +45,7 @@ wandb_key.txt
 *.log
 !runs/*/stdout.log
 env.txt.bak
+
+# OS lock and atomic-write scratch files
+logs/.runs.lock
+*.tmp

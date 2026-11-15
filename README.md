@@ -2,7 +2,7 @@
 
 课程项目（teamwork-PPOA）。我们从论文本身复现近端策略优化（Proximal Policy Optimization，arXiv:1707.06347v2），而不是调用框架里现成的 `PPO()`；并且检验论文关于"三种代理目标里哪一种真正有效"的核心主张，能否在我们自己的测量中成立。
 
-> **状态：第 1 周（11/02 – 11/08），进行中。** 仓库骨架、vendored 训练器、运行与日志管线已经就位；实验矩阵尚未开始。本 README 里的任何内容都不构成"结果"——何时交付什么，见文末的七周路线图。英文版见 [`docs/README.en.md`](docs/README.en.md)。
+> **状态：第 2 周（11/09 – 11/15），本机全尺寸基线验收通过。** 3 环境 × seed 0 × 精确 100 万步均已完成，各 489 次更新；统一参数、运行索引和冻结版本已交付。结果与原始证据见 [`docs/w2_baseline.md`](docs/w2_baseline.md)。W3 的三变体、多种子科学比较尚未开展。英文版见 [`docs/README.en.md`](docs/README.en.md)。
 
 ## 论文主张是什么，我们检验什么
 
@@ -44,22 +44,38 @@ PPO 的贡献是一族代理目标：它不求解带约束的优化问题，也�
 
 ## 快速开始
 
-需要 Python 3.10；版本全部用 `==` 钉在 [`requirements.txt`](requirements.txt)，实测机器与全部依赖版本记录在 [`env.txt`](env.txt)。
+需要 Python 3.10。直接依赖钉在 [`requirements.txt`](requirements.txt)，本次实测的完整依赖冻结在 [`requirements-lock.txt`](requirements-lock.txt)，机器信息见 [`env.txt`](env.txt)。Windows 上 MuJoCo 的虚拟环境必须放在纯英文路径，真实安装过程见 [`docs/setup.md`](docs/setup.md)。
 
 ```powershell
-python -m pip install torch==2.4.1 --index-url https://download.pytorch.org/whl/cu121
-python -m pip install -r requirements.txt
+python -m pip install -r requirements-lock.txt
 
-python scripts/run.py --env HalfCheetah-v4 --seed 0 --variant clip0.2 --smoke
-python scripts/plot.py --run runs/<run_id> --out figures/w1_smoke_HalfCheetah.png
+python scripts/run.py --env HalfCheetah-v4 --seed 0 --variant clip0.2 --smoke --threads 1
+python scripts/plot.py --run runs/<run_id> --out figures/smoke_HalfCheetah.png
+
+# W2：三个独立进程并行；资源有限时用 --jobs 1
+python scripts/run_baseline.py --jobs 3 --threads 1
+python scripts/verify_runs.py --baseline
+python scripts/plot.py --baseline --out figures/w2_baseline.png
+python scripts/summarize_baseline.py
+
+# 回归检查（含真实短训练、失败处理和并发索引）
+python -m unittest discover -s tests -v
 ```
 
 **预期输出与运行时长**
 
 | 命令 | 步数 | 预期耗时 | 产出 |
 |---|---|---|---|
-| `run.py --smoke` | 20,000（9 次更新） | 约 1 分钟 | `runs/<id>/progress.csv`（9 行）、`config.json`、`stdout.log` |
-| `run.py`（完整） | 1,000,000 | 约 55 分钟（参考机器） | 约 488 次更新，每次一行 |
+| `run.py --smoke` | 20,000（10 次更新） | 本机约 91 秒（含启动） | `runs/<id>/progress.csv`（10 行）、`config.json`、`stdout.log` |
+| `run.py`（完整） | 精确 1,000,000 | 以每个 run 的 `wall_time_s` 为准 | 489 次更新，末批 576 步；每次一行 |
+
+`scripts/run.py --help` 展示全部训练参数，例如 `--learning-rate`、`--num-envs`、`--num-steps`、`--num-minibatches`、`--update-epochs`、`--gamma`、`--gae-lambda`、`--hidden-sizes`、`--activation`、`--adam-eps`，以及 `--anneal-lr false` 等布尔开关。参数由 runner 和训练器共享同一解析定义；`config.json` 保存实际传入值、实际步数、源码 SHA-256、依赖版本与状态。`--dry-run` 只打印配置，不创建运行证据。
+
+默认使用 CPU；GPU 需显式 `--cuda true`。单次 runner 的线程默认值保留 4，W2 矩阵入口固定默认为 1。`--output-root` 可隔离试验目录。非法批大小、非有限超参数与不足以做优势归一化的末批会在训练前报错。
+
+**变体边界：** W2 只验收 `clip0.2`。旧版 `adaptiveKL` 实际是 KL 早停，现已拒绝该误导命名；旧行为用 `--variant kl-early-stop` 显式调用。真正自适应 KL 罚项仍待 W3 实现。非默认裁剪系数使用 `--variant custom --clip-coef ...`，避免挂错实验标签。
+
+验收以 `logs/w2_baseline.json` 指定的三个完整 run 为准，不能仅看返回码或请求步数。失败与冒烟记录保留在索引中，但不会进入 W2 结果。已记录的算法与测量差异见 [`docs/deviations.md`](docs/deviations.md)。
 
 每个 run 目录都是自解释的，这正是本仓库的设计目的：
 
@@ -75,9 +91,12 @@ runs/20261030-1247_HalfCheetah-v4_seed0_clip0.2_smoke/
 
 ```
 src/ppo_continuous_action.py   vendored 的 CleanRL PPO + [REPRO] 日志钩子
+src/ppo_args.py                runner 与训练器共享的参数、默认值与校验
 scripts/run.py                 唯一跑训练的入口
+scripts/run_baseline.py        W2 三环境矩阵与验收清单
+scripts/verify_runs.py         检查步数、指标、配置、索引和冻结版本
 scripts/plot.py                progress.csv -> PNG（图从不手画）
-scripts/make_table.py          runs -> Paper vs Ours 表
+scripts/summarize_baseline.py  完整 W2 run -> 可追溯摘要
 scripts/collect_env.py         机器与库版本快照 -> env.txt
 scripts/weekly_check.ps1       推送前自查，规则与评分项一一对应
 configs/base.yaml              论文 Table 3 + 实验矩阵（作为记录，不作为真源）
@@ -87,4 +106,4 @@ runs/                          提交进仓库的证据，一个 run 一个目�
 logs/runs.csv                  所有 run 的索引
 ```
 
-本仓库的代码与文字在 AI 助手辅助下起草；AI 不产出任何实验结果。逐文件的记录（含每位成员读过、跑过哪些文件）在 [`AI_USAGE.md`](AI_USAGE.md)。
+本仓库的代码与文字在 AI 助手辅助下起草；实验数值由本机实际 MuJoCo/PyTorch 训练产生。自动执行与人工复核的边界记录在 [`AI_USAGE.md`](AI_USAGE.md)，未获人工签名的内容不会冒称已由组员复核。

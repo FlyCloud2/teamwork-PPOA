@@ -1,0 +1,12 @@
+{
+  "created": "2026-11-15T16:51:59",
+  "run_ids": [
+    "20261115-161151-397383_Hopper-v4_seed0_clip0.2_full",
+    "20261115-161151-400845_HalfCheetah-v4_seed0_clip0.2_full",
+    "20261115-161151-401829_Walker2d-v4_seed0_clip0.2_full"
+  ],
+  "jobs": 3,
+  "threads_per_run": 1,
+  "requested_steps_per_run": 1000000,
+  "status": "verified"
+}

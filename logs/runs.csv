@@ -1,0 +1,6 @@
+run_id,started,env,seed,variant,steps,actual_steps,updates,status,wall_time_s,return_code,git_commit_short
+20261115-160742-166861_HalfCheetah-v4_seed0_clip0.2_smoke,2026-11-15T16:07:42,HalfCheetah-v4,0,clip0.2,20000,,,failed,27.89,1,bcb3bc9
+20261115-161041-144021_HalfCheetah-v4_seed0_clip0.2_smoke,2026-11-15T16:10:41,HalfCheetah-v4,0,clip0.2,20000,20000,10,completed,90.781,0,bcb3bc9
+20261115-161151-397383_Hopper-v4_seed0_clip0.2_full,2026-11-15T16:11:51,Hopper-v4,0,clip0.2,1000000,1000000,489,completed,2383.375,0,bcb3bc9
+20261115-161151-400845_HalfCheetah-v4_seed0_clip0.2_full,2026-11-15T16:11:51,HalfCheetah-v4,0,clip0.2,1000000,1000000,489,completed,2226.187,0,bcb3bc9
+20261115-161151-401829_Walker2d-v4_seed0_clip0.2_full,2026-11-15T16:11:51,Walker2d-v4,0,clip0.2,1000000,1000000,489,completed,2407.656,0,bcb3bc9

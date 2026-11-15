@@ -1,0 +1,17 @@
+{
+  "upstream_repository": "https://github.com/vwxyzjn/cleanrl",
+  "upstream_commit": "cf20043b852deedf52dc9f90a325c6866d599005",
+  "upstream_file": "cleanrl/ppo_continuous_action.py",
+  "upstream_normalized_source_sha256": "612fb2559e0fc169cd80d305dfc0241486819ff0501a465b2a04d5d3b9c894f2",
+  "local_source_sha256": "b244c49ea570686c1e90404636e3ee556a78be78537a5448e5b2768bde29f5a9",
+  "checks": {
+    "make_env": true,
+    "layer_init": true,
+    "get_value": true,
+    "get_action_and_value": true,
+    "minibatch_loss_and_optimizer_body": true,
+    "gae_recurrence": true,
+    "default_network_initialization": true
+  },
+  "scope": "Selected mathematical code and default initialization; the whole file intentionally differs (CLI, logging, exact final rollout)."
+}

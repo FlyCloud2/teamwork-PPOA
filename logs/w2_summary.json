@@ -1,0 +1,35 @@
+{
+  "runs": [
+    {
+      "env": "HalfCheetah-v4",
+      "run_id": "20261115-161151-400845_HalfCheetah-v4_seed0_clip0.2_full",
+      "actual_steps": 1000000,
+      "updates": 489,
+      "wall_time_s": 2226.187,
+      "last_recorded_episode_return": 1440.2457275390625,
+      "last_10_update_return_mean": 1421.1635864257812,
+      "return_code": 0
+    },
+    {
+      "env": "Hopper-v4",
+      "run_id": "20261115-161151-397383_Hopper-v4_seed0_clip0.2_full",
+      "actual_steps": 1000000,
+      "updates": 489,
+      "wall_time_s": 2383.375,
+      "last_recorded_episode_return": 1837.9168701171875,
+      "last_10_update_return_mean": 2159.5015258789062,
+      "return_code": 0
+    },
+    {
+      "env": "Walker2d-v4",
+      "run_id": "20261115-161151-401829_Walker2d-v4_seed0_clip0.2_full",
+      "actual_steps": 1000000,
+      "updates": 489,
+      "wall_time_s": 2407.656,
+      "last_recorded_episode_return": 2717.90966796875,
+      "last_10_update_return_mean": 2775.8118560791017,
+      "return_code": 0
+    }
+  ],
+  "aggregation": "latest completed training episode at each update; last 10 updates, not episodes or seeds"
+}
