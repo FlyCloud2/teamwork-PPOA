@@ -8,7 +8,7 @@ survives our own measurements.
 > **Status: W2 baseline verified locally.** All three environments completed
 > exactly 1,000,000 steps at seed 0, with 489 updates each. See the
 > [generated evidence report](w2_baseline.md). The W3 multi-seed comparison has
-> not started. Remote delivery is pending write access to the target repository.
+> not started. The W2 implementation and evidence are published on `main` in commit `0732e76`.
 
 ## What the paper claims, and what we test
 

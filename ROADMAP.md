@@ -41,7 +41,7 @@
 - [x] 三环境 × seed 0 × clip0.2 × 1,000,000 步全部完成，验收 `logs/w2_baseline.json`
 - [x] 生成全尺度曲线和可追溯摘要，见 `docs/w2_baseline.md`
 - [x] 核对锁定的 CleanRL 上游：损失/优化器、GAE 递推、包装链与默认网络初始化共 7 项通过
-- [ ] 推送并核对远端 main（当前账号 Emiya-ggb 缺少写权限，Git 返回 403）
+- [x] 推送并核对远端 main：W2 实现与证据提交 `0732e76` 已发布
 
 执行：`python scripts/run_baseline.py --jobs 3 --threads 1`。
 验收：`python scripts/verify_runs.py --baseline`。
