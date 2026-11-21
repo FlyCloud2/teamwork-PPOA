@@ -52,6 +52,33 @@ The trainer's opening W1 description of unchanged update code is historical;
 the explicit final-rollout changes above are part of the executed W2 source.
 Source hashes are kept unchanged after the full runs to retain their provenance.
 
+## W3 changes (2026-11-22)
+
+1. Add a policy-surrogate switch to the shared schema: `--surrogate clip|kl-penalty`
+   (default `clip`), plus `--kl-coef` (initial beta, default 1.0), `--kl-target`
+   (d_targ, default 0.01) and `--kl-coef-max` (upper bound, default `1e300`,
+   i.e. effectively none). Validation rejects a non-positive beta or target, and
+   rejects `kl-penalty` combined with `--target-kl`, because that pair would mix
+   the penalty with the early-stopping rule.
+2. Implement the KL-penalty surrogate of the paper's Section 4. The policy term
+   is the unclipped objective and the total loss adds `beta * approx_kl`, where
+   `approx_kl` is the same k3 estimator the CSV already records
+   (`((ratio - 1) - logratio).mean()`).
+3. Implement the beta adaptation of Algorithm 2: after each policy update, take
+   the mean KL over that update's minibatches; if it is below `d_targ / 1.5`
+   halve beta, if above `d_targ * 1.5` double it; then clamp to `--kl-coef-max`.
+   Every change is printed to the run's `stdout.log`, so the beta trajectory is
+   traceable without a new CSV column. The CSV schema is unchanged.
+4. Only the policy surrogate changes. `--clip-coef`, value clipping, GAE,
+   normalization, seeds and the step budget stay identical to `clip0.2`, so the
+   C1 comparison differs in one factor. `clipfrac` keeps meaning "fraction of
+   ratios outside the 0.2 band" and is therefore a diagnostic, not a loss term,
+   under `kl-penalty`.
+5. The regression test that asserted `adaptiveKL` must be rejected is replaced:
+   an unknown variant name now fills that role, and three tests pin the new
+   mapping (`adaptiveKL`, `adaptiveKL-capped`, `adaptiveKL-tight`) including the
+   requirement that they differ only in `kl_coef_max`.
+
 ## Reproduce the upstream audit
 
 Run from the repository root with the tested Python environment:

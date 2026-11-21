@@ -5,10 +5,12 @@ Course project (teamwork-PPOA). We reproduce **Proximal Policy Optimization**
 and we ask whether the paper's central claim about *which surrogate objective works*
 survives our own measurements.
 
-> **Status: W2 baseline verified locally.** All three environments completed
-> exactly 1,000,000 steps at seed 0, with 489 updates each. See the
-> [generated evidence report](w2_baseline.md). The W3 multi-seed comparison has
-> not started. The W2 implementation and evidence are published on `main` in commit `0732e76`.
+> **Status: W3 (C1) complete - partially reproduced.** 27 runs of
+> `clip0.2` / `adaptiveKL` / `noclip` across 3 environments x 3 seeds x 1,000,000
+> steps, plus 18 controlled runs with a bounded beta. Verdict: clipping beats
+> both alternatives, but the middle position could not be tested - all three beta
+> settings produce bit-identical trajectories. See the
+> [generated evidence report](w3_c1.md) and the [W2 baseline](w2_baseline.md).
 
 ## What the paper claims, and what we test
 
@@ -101,10 +103,13 @@ The locked index `logs/runs.csv` supports concurrent runs. The acceptance manife
 `logs/w2_baseline.json` includes only the three verified full baselines; failed
 and smoke attempts remain indexed separately.
 
-**Variant boundary:** W2 accepts only `clip0.2`. Legacy `adaptiveKL` was KL early
-stopping, not an adaptive penalty, so that misleading flag now fails explicitly.
-The approximation is available as `kl-early-stop`; an actual adaptive penalty
-remains W3 work. Use `--variant custom` for a non-default clipping coefficient.
+**Variant boundary:** W2 accepted only `clip0.2`; its legacy `adaptiveKL` was KL
+early stopping and is now called `kl-early-stop`. W3 adds a real KL penalty as
+`adaptiveKL` (literal Algorithm 2, no beta bound), plus two controls with the
+bound at `1/d_target = 100` and at `1`. The three settings turned out to be
+numerically identical (see [w3_c1.md](w3_c1.md) §3), so this variant is not a
+valid test of the paper's middle position. Use `--variant custom` for a
+non-default clipping coefficient.
 
 Raw training returns sampled at update boundaries are not evaluation scores.
 Single-seed results do not establish the C1 ordering. AI assistance and the

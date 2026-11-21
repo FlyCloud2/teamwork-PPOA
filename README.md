@@ -2,7 +2,11 @@
 
 课程项目（teamwork-PPOA）。我们从论文本身复现近端策略优化（Proximal Policy Optimization，arXiv:1707.06347v2），而不是调用框架里现成的 `PPO()`；并且检验论文关于"三种代理目标里哪一种真正有效"的核心主张，能否在我们自己的测量中成立。
 
-> **状态：第 2 周（11/09 – 11/15），本机全尺寸基线验收通过。** 3 环境 × seed 0 × 精确 100 万步均已完成，各 489 次更新；统一参数、运行索引和冻结版本已交付。结果与原始证据见 [`docs/w2_baseline.md`](docs/w2_baseline.md)。W3 的三变体、多种子科学比较尚未开展。英文版见 [`docs/README.en.md`](docs/README.en.md)。
+> **状态：第 3 周（11/16 – 11/22），C1 主对照已完成。** 3 环境 × 3 种子 × 1,000,000 步的
+> `clip0.2` / `adaptiveKL` / `noclip` 共 27 次已完成，另有 18 次受控对照
+> （`adaptiveKL-capped`、`adaptiveKL-tight`）。裁决是**部分复现**：裁剪优于两端成立，
+> 中间那一档在我们的实现下退化、无法判定。结果与原始证据见 [`docs/w3_c1.md`](docs/w3_c1.md)，
+> 基线见 [`docs/w2_baseline.md`](docs/w2_baseline.md)。英文版见 [`docs/README.en.md`](docs/README.en.md)。
 
 ## 论文主张是什么，我们检验什么
 
@@ -73,7 +77,11 @@ python -m unittest discover -s tests -v
 
 默认使用 CPU；GPU 需显式 `--cuda true`。单次 runner 的线程默认值保留 4，W2 矩阵入口固定默认为 1。`--output-root` 可隔离试验目录。非法批大小、非有限超参数与不足以做优势归一化的末批会在训练前报错。
 
-**变体边界：** W2 只验收 `clip0.2`。旧版 `adaptiveKL` 实际是 KL 早停，现已拒绝该误导命名；旧行为用 `--variant kl-early-stop` 显式调用。真正自适应 KL 罚项仍待 W3 实现。非默认裁剪系数使用 `--variant custom --clip-coef ...`，避免挂错实验标签。
+**变体边界：** `clip0.2`、`noclip`、`kl-early-stop`、`custom` 之外，W3 新增了三个 KL 罚项变体：
+`adaptiveKL`（论文 Algorithm 2 的字面实现，β 无上界）、`adaptiveKL-capped`（β ≤ 1/d_targ = 100）、
+`adaptiveKL-tight`（β ≤ 1）。实测三者训练轨迹逐行相同——β 主导后梯度裁剪把步长归一化，
+β 的具体数值不再影响更新；因此在我们的设置里这一档**无法作为论文中间位置的检验**，
+详见 [`docs/w3_c1.md`](docs/w3_c1.md) §3。非默认裁剪系数使用 `--variant custom --clip-coef ...`。
 
 验收以 `logs/w2_baseline.json` 指定的三个完整 run 为准，不能仅看返回码或请求步数。失败与冒烟记录保留在索引中，但不会进入 W2 结果。已记录的算法与测量差异见 [`docs/deviations.md`](docs/deviations.md)。
 

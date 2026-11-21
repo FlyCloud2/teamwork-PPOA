@@ -48,7 +48,24 @@
 安装与环境限制见 [`docs/setup.md`](docs/setup.md)，算法/测量口径见 [`docs/deviations.md`](docs/deviations.md)。
 
 W2 只打通基线，不把单种子训练曲线当作 C1 排序的证据。
-真正的 `adaptiveKL` 罚项仍待 W3；旧 KL 早停近似已改用明确名称。
+真正的 `adaptiveKL` 罚项已在 W3 实现（见下）。
+
+## W3 详细清单（2026-11-22，本轮由张崇彬轮值）
+
+- [x] 实现 KL 罚项代理目标：`--surrogate kl-penalty` + β 自适应（论文 Algorithm 2）+ β 上界开关
+- [x] 回归测试从 12 项扩到 13 项并全绿；原先"`adaptiveKL` 必须被拒"的用例改为非法变体名
+- [x] 主矩阵 27 次：`clip0.2` / `adaptiveKL` / `noclip` × 3 环境 × 3 种子 × 100 万步，全部 `completed`
+- [x] 受控对照 18 次：`adaptiveKL-capped`（β ≤ 100）、`adaptiveKL-tight`（β ≤ 1）
+- [x] `scripts/plot_c1.py` 出两张图（柱状图 + 学习曲线），数据全部读自 `progress.csv`
+- [x] 结果与裁决写入 [`docs/w3_c1.md`](docs/w3_c1.md)
+
+执行：`python scripts/run.py --variant <variant> --env <env> --seed <seed> --threads 1`
+验收：`python scripts/verify_runs.py --run runs/<run_id>`；汇总与出图见 `docs/w3_c1.md` §6。
+
+W3 的结论是**部分复现**：裁剪优于不裁剪、裁剪优于 KL 罚项这两条成立；
+但三个 β 设置训练轨迹逐行相同，说明我们的 KL 罚项实现退化成了"只最小化 KL"，
+**不能**用来判定论文关于中间那一档的排序。这是本轮的已知局限，写进了偏差表。
+
 
 ## W1 详细清单（历史）
 

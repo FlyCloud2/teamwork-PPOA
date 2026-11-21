@@ -16,3 +16,28 @@ member read or ran any code. Historical `<name>` / `<date>` comments in vendored
 and W1 files were unfilled templates and are not human attestations.
 
 Upstream verification: seven scoped AST/default-initialization checks passed against CleanRL cf20043. Full W2 runs completed with 489 updates and 1,000,000 steps each. The project directory was relocated after training; original run argv paths are retained as historical evidence.
+
+## 2026-11-22: W3 / C1 adaptive KL penalty
+
+W3 is the turn of 张崇彬 (2260032166). An AI assistant drafted, at his request,
+the parts of W3 that were still marked "W3 pending" in `MODIFICATIONS.md`:
+
+- `--surrogate {clip,kl-penalty}`, `--kl-coef`, `--kl-target`, `--kl-coef-max`
+  in `src/ppo_args.py`, and the KL-penalty loss plus the beta adaptation of
+  Algorithm 2 in `src/ppo_continuous_action.py`;
+- the runner mapping for `adaptiveKL`, `adaptiveKL-capped`, `adaptiveKL-tight`
+  in `scripts/run.py`, and the corresponding regression tests;
+- `scripts/plot_c1.py` (figures) and the out-of-repository matrix launcher.
+
+The 36+9 C1 runs were executed by that launcher on the W3 owner's machine.
+Every reported number is read from `runs/<id>/progress.csv`; the assistant did
+not type any result by hand, and `logs/c1_summary.json` is produced by a script
+from those CSVs.
+
+Findings that are the assistant's own analysis, not measurements, are marked as
+such in `docs/w3_c1.md` (the gradient-clipping explanation for why the beta cap
+changes nothing).
+
+Human review/sign-off: pending. The W3 owner has not yet confirmed a line-by-line
+reading of the KL-penalty implementation, and this file does not claim otherwise.
+
