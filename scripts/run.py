@@ -23,7 +23,8 @@ from ppo_args import build_parser, validate_args
 PPO = REPO / "src" / "ppo_continuous_action.py"
 RUNS = REPO / "runs"
 LOGS = REPO / "logs"
-VARIANTS = ("clip0.2", "noclip", "kl-early-stop", "custom", "adaptiveKL")
+VARIANTS = ("clip0.2", "noclip", "kl-early-stop", "custom", "adaptiveKL",
+            "adaptiveKL-capped", "adaptiveKL-tight")
 INDEX_FIELDS = ["run_id", "started", "env", "seed", "variant", "steps", "actual_steps",
                 "updates", "status", "wall_time_s", "return_code", "git_commit_short"]
 
@@ -118,8 +119,25 @@ def parse_runner_args(argv=None):
     args = parser.parse_args(argv)
     if args.threads <= 0:
         parser.error("--threads must be positive")
-    if args.variant == "adaptiveKL":
-        parser.error("adaptiveKL penalty is not implemented; use kl-early-stop for the legacy approximation (W3 pending)")
+    if args.variant in ("adaptiveKL", "adaptiveKL-capped", "adaptiveKL-tight"):
+        # [REPRO] W3：论文 Table 1 的第二种代理目标 —— 自适应 KL 罚项。
+        # 只切换策略代理目标，其余（种子、超参、步数预算、价值裁剪）与 clip0.2 完全一致，
+        # 这样 C1 里两者的差异只能归因到代理目标本身。
+        # 目标 KL 取论文里表现居中的 d_targ = 0.01。
+        args.surrogate = "kl-penalty"
+        args.kl_coef = 1.0
+        args.kl_target = 0.01
+        args.target_kl = None
+        if args.variant == "adaptiveKL-capped":
+            # 受控对照一：上界 1 / d_targ。实测与字面版逐行相同 —— 梯度裁剪把 beta 的大小抹平了。
+            args.kl_coef_max = 1.0 / args.kl_target
+        elif args.variant == "adaptiveKL-tight":
+            # 受控对照二：上界压到 1，即 beta 永远不高于初始值。
+            # 用来区分「KL 罚项本身不行」与「beta 的调整规则太激进」。
+            args.kl_coef_max = 1.0
+        else:
+            # 字面版：不设上界，展示 Algorithm 2 的原始行为。
+            args.kl_coef_max = 1e300
     if args.variant == "clip0.2" and (args.clip_coef != 0.2 or args.target_kl is not None):
         parser.error("clip0.2 requires --clip-coef 0.2 and no --target-kl; use --variant custom")
     if args.variant == "noclip":

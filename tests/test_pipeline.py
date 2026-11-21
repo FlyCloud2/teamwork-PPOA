@@ -32,11 +32,43 @@ class ArgumentTests(unittest.TestCase):
     def test_invalid_parameters_fail_before_creating_artifacts(self):
         cases = [["--threads", "0"], ["--num-steps", "0"], ["--num-minibatches", "31"],
                  ["--num-envs", "3"], ["--total-timesteps", "1"], ["--gamma", "nan"],
-                 ["--learning-rate", "inf"], ["--variant", "adaptiveKL"],
+                 ["--learning-rate", "inf"], ["--variant", "no-such-variant"],
                  ["--clip-coef", "0.1"], ["--cuda", "garbage"]]
         for case in cases:
             with self.subTest(case=case), contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
                 run.parse_runner_args(case)
+
+    def test_adaptive_kl_variant_switches_only_the_surrogate(self):
+        # [REPRO] W3：adaptiveKL 从「一律拒绝」变成可用。它只应改动代理目标相关的三项，
+        # 其他超参必须与 clip0.2 完全一致，否则 C1 的对照就不止变了一个因素。
+        adaptive = run.parse_runner_args(["--variant", "adaptiveKL"])
+        clipped = run.parse_runner_args(["--variant", "clip0.2"])
+        self.assertEqual(adaptive.surrogate, "kl-penalty")
+        self.assertEqual(adaptive.kl_coef, 1.0)
+        self.assertEqual(adaptive.kl_target, 0.01)
+        self.assertIsNone(adaptive.target_kl)
+        self.assertEqual(adaptive.clip_coef, clipped.clip_coef)
+        for key in ("num_steps", "num_minibatches", "update_epochs", "learning_rate",
+                    "gamma", "gae_lambda", "ent_coef", "vf_coef", "max_grad_norm",
+                    "hidden_sizes", "activation", "adam_eps", "num_envs",
+                    "total_timesteps", "clip_vloss", "norm_adv", "anneal_lr"):
+            self.assertEqual(getattr(adaptive, key), getattr(clipped, key), key)
+
+    def test_capped_adaptive_kl_bounds_beta_only(self):
+        # [REPRO] W3：受控对照只改 beta 上界，其他一切与字面版一致。
+        capped = run.parse_runner_args(["--variant", "adaptiveKL-capped"])
+        literal = run.parse_runner_args(["--variant", "adaptiveKL"])
+        self.assertEqual(capped.surrogate, "kl-penalty")
+        self.assertEqual(capped.kl_coef_max, 100.0)   # 1 / d_targ
+        self.assertEqual(literal.kl_coef_max, 1e300)  # effectively unbounded
+        for key in ("kl_coef", "kl_target", "clip_coef", "update_epochs", "learning_rate",
+                    "num_steps", "num_minibatches", "gamma", "gae_lambda", "seed",
+                    "total_timesteps", "num_envs"):
+            self.assertEqual(getattr(capped, key), getattr(literal, key), key)
+
+    def test_noclip_still_uses_the_clipped_surrogate_path(self):
+        args = run.parse_runner_args(["--variant", "noclip"])
+        self.assertEqual(args.surrogate, "clip")
 
     def test_dry_run_creates_nothing(self):
         with tempfile.TemporaryDirectory() as directory, contextlib.redirect_stdout(io.StringIO()):

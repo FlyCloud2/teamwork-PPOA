@@ -41,7 +41,15 @@ variants:
                  flags: ["--clip-coef", "1000000000.0"]}
   kl-early-stop: {desc: "legacy clipped PPO with KL early stopping; NOT adaptive KL penalty",
                  flags: ["--clip-coef", "0.2", "--target-kl", "0.01"]}
-  adaptiveKL: {desc: "not implemented; reserved for W3; runner rejects this label"}
+  adaptiveKL: {desc: "paper Algorithm 2 literally: adaptive beta, no upper bound",
+               flags: ["--surrogate", "kl-penalty", "--kl-coef", "1.0",
+                       "--kl-target", "0.01", "--kl-coef-max", "1e300"]}
+  adaptiveKL-capped: {desc: "controlled run 1: beta capped at 1 / d_targ = 100",
+                      flags: ["--surrogate", "kl-penalty", "--kl-coef", "1.0",
+                              "--kl-target", "0.01", "--kl-coef-max", "100"]}
+  adaptiveKL-tight: {desc: "controlled run 2: beta never exceeds its initial value of 1",
+                     flags: ["--surrogate", "kl-penalty", "--kl-coef", "1.0",
+                             "--kl-target", "0.01", "--kl-coef-max", "1"]}
 
 # 在 env.txt 那台机器上实测的执行参数（不来自论文）。
 execution:

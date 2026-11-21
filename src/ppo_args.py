@@ -74,6 +74,21 @@ def build_parser():
         help="the maximum norm for the gradient clipping")
     parser.add_argument("--target-kl", type=float, default=None,
         help="the target KL divergence threshold")
+    # [REPRO] W3：论文 Table 1 比较的三种代理目标里，第二种是「自适应 KL 罚项」。
+    # 这里用一个显式开关选代理目标，而不是在训练器里猜 variant 名字 ——
+    # 保证 C1 的两次对照只差这一个因素。
+    parser.add_argument("--surrogate", choices=["clip", "kl-penalty"], default="clip",
+        help="policy surrogate objective: the clipped objective, or the KL penalty of the paper")
+    parser.add_argument("--kl-coef", type=float, default=1.0,
+        help="initial coefficient beta of the KL penalty (paper Algorithm 2 starts at 1)")
+    parser.add_argument("--kl-target", type=float, default=0.01,
+        help="target KL divergence d_targ used to adapt beta")
+    # [REPRO] W3：论文 Algorithm 2 没有给 beta 设上界。字面实现下 beta 每轮翻倍，
+    # 在 489 轮里能涨到 1e150，罚项压过一切、策略冻结（见 logs/c1_summary.json）。
+    # 默认 1e300 等价于「不设上界」，所以字面版仍然可复现；
+    # 受控对照版把上界设成 1 / d_targ，让 1% 的 KL 偏移大约值 1 个单位的惩罚。
+    parser.add_argument("--kl-coef-max", type=float, default=1e300,
+        help="upper bound for the adaptive beta; 1e300 means effectively unbounded")
     parser.add_argument("--hidden-sizes", type=int, nargs="+", default=[64, 64])
     parser.add_argument("--activation", choices=["tanh", "relu"], default="tanh")
     parser.add_argument("--adam-eps", type=float, default=1e-5)
@@ -97,6 +112,15 @@ def validate_args(args, parser):
             parser.error(f"--{key.replace('_', '-')} must be in [0, 1]")
     if args.target_kl is not None and (not math.isfinite(args.target_kl) or args.target_kl <= 0):
         parser.error("--target-kl must be finite and positive")
+    # [REPRO] 自适应 KL 罚项的两个参数：beta 初值必须为正，目标 KL 必须为正。
+    if not math.isfinite(args.kl_coef) or args.kl_coef <= 0:
+        parser.error("--kl-coef must be finite and positive")
+    if not math.isfinite(args.kl_target) or args.kl_target <= 0:
+        parser.error("--kl-target must be finite and positive")
+    if not math.isfinite(args.kl_coef_max) or args.kl_coef_max <= 0:
+        parser.error("--kl-coef-max must be finite and positive")
+    if args.surrogate == "kl-penalty" and args.target_kl is not None:
+        parser.error("--surrogate kl-penalty cannot be combined with --target-kl (that is the early-stop rule)")
     if any(size <= 0 for size in args.hidden_sizes):
         parser.error("--hidden-sizes must be positive")
     args.batch_size = args.num_envs * args.num_steps

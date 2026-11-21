@@ -172,6 +172,10 @@ if __name__ == "__main__":
     next_done = torch.zeros(args.num_envs).to(device)
     num_updates = args.num_updates
 
+    # [REPRO] W3：自适应 KL 罚项的系数 beta。论文 Algorithm 2 把它初始化为 1，
+    # 之后按实测 KL 与目标 KL 的比值每轮自动调整。
+    kl_coef = args.kl_coef
+
     # [REPRO] CSV 证据链。每次更新一行；报告里每个数字都追溯到这份文件，
     # 而不是手填的表格。逐行写入并 flush，所以中途崩溃的 run
     # 也会把已有的证据留在磁盘上。
@@ -269,6 +273,8 @@ if __name__ == "__main__":
         # 优化策略网络与价值网络
         b_inds = np.arange(batch_size)
         clipfracs = []
+        # [REPRO] W3：收集本轮每次 minibatch 的 KL，用于按论文公式整轮平均后调 beta。
+        kl_means = []
         for epoch in range(args.update_epochs):
             np.random.shuffle(b_inds)
             for start in range(0, batch_size, minibatch_size):
@@ -295,9 +301,15 @@ if __name__ == "__main__":
                     mb_advantages = (mb_advantages - mb_advantages.mean()) / (mb_advantages.std() + 1e-8)
 
                 # 策略损失
-                pg_loss1 = -mb_advantages * ratio
-                pg_loss2 = -mb_advantages * torch.clamp(ratio, 1 - args.clip_coef, 1 + args.clip_coef)
-                pg_loss = torch.max(pg_loss1, pg_loss2).mean()
+                if args.surrogate == "kl-penalty":
+                    # [REPRO] W3 / 论文式(4)：不裁剪的目标，KL 罚项在下面加到总损失里。
+                    # 这样 CSV 的 policy_loss 列在两种代理目标下都是「纯目标项」，可直接对比。
+                    pg_loss = (-mb_advantages * ratio).mean()
+                    kl_means.append(float(approx_kl.item()))
+                else:
+                    pg_loss1 = -mb_advantages * ratio
+                    pg_loss2 = -mb_advantages * torch.clamp(ratio, 1 - args.clip_coef, 1 + args.clip_coef)
+                    pg_loss = torch.max(pg_loss1, pg_loss2).mean()
 
                 # 价值损失
                 newvalue = newvalue.view(-1)
@@ -316,6 +328,10 @@ if __name__ == "__main__":
 
                 entropy_loss = entropy.mean()
                 loss = pg_loss - args.ent_coef * entropy_loss + v_loss * args.vf_coef
+                if args.surrogate == "kl-penalty":
+                    # [REPRO] W3：论文式(4) 的罚项 —— 目标项减去 beta·KL。
+                    # 最小化 loss 等价于最大化「目标 − beta·KL」。
+                    loss = loss + kl_coef * approx_kl
 
                 optimizer.zero_grad()
                 loss.backward()
@@ -325,6 +341,26 @@ if __name__ == "__main__":
             if args.target_kl is not None:
                 if approx_kl > args.target_kl:
                     break
+
+        # [REPRO] W3 / 论文第 4 节 Algorithm 2：按整轮实测的 KL 调整 beta。
+        # d < d_targ / 1.5 说明走得太保守，beta 减半；d > d_targ * 1.5 说明走得太远，beta 加倍。
+        # 调整只在下一轮生效，本轮所有 minibatch 用的是同一个 beta —— 与论文描述一致。
+        if args.surrogate == "kl-penalty" and kl_means:
+            measured_kl = float(np.mean(kl_means))
+            previous_beta = kl_coef
+            if measured_kl < args.kl_target / 1.5:
+                kl_coef = kl_coef / 2.0
+            elif measured_kl > args.kl_target * 1.5:
+                kl_coef = kl_coef * 2.0
+            # [REPRO] W3：上界在调整之后施加，beta 永远不会越过它。
+            # 不设上界时（默认 1e300）这里等于没做任何事，字面行为保持不变。
+            kl_coef = min(kl_coef, args.kl_coef_max)
+            if kl_coef != previous_beta:
+                print(
+                    f"[kl-penalty] update={update} measured_kl={measured_kl:.6f} "
+                    f"beta {previous_beta:.6f} -> {kl_coef:.6f}",
+                    flush=True,
+                )
 
         y_pred, y_true = b_values.cpu().numpy(), b_returns.cpu().numpy()
         var_y = np.var(y_true)
