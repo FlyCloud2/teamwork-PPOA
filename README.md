@@ -104,12 +104,15 @@ scripts/run.py                 唯一跑训练的入口
 scripts/run_baseline.py        W2 三环境矩阵与验收清单
 scripts/verify_runs.py         检查步数、指标、配置、索引和冻结版本
 scripts/plot.py                progress.csv -> PNG（图从不手画）
+scripts/plot_c1.py             C1 五变体对照：柱状图 + 学习曲线
+scripts/summarize_c1.py        校验 45 个 C1 run -> logs/c1_summary.json
 scripts/summarize_baseline.py  完整 W2 run -> 可追溯摘要
 scripts/collect_env.py         机器与库版本快照 -> env.txt
 scripts/weekly_check.ps1       推送前自查，规则与评分项一一对应
 configs/base.yaml              论文 Table 3 + 实验矩阵（作为记录，不作为真源）
 docs/setup.md                  装环境时真实踩过的坑
 docs/deviations.md             与论文的每一处差异
+docs/w3_c1.md                  C1 的结果、裁决与局限（数字全部来自脚本）
 runs/                          提交进仓库的证据，一个 run 一个目录
 logs/runs.csv                  所有 run 的索引
 ```

@@ -79,6 +79,13 @@ python scripts/plot.py --baseline --out figures/w2_baseline.png
 python scripts/summarize_baseline.py
 ```
 
+The C1 (W3) table and figures are regenerated from the committed runs alone:
+
+```powershell
+python scripts/summarize_c1.py   # -> logs/c1_summary.json
+python scripts/plot_c1.py        # -> figures/c1_variants.png, figures/c1_curves.png
+```
+
 Use `--jobs 1` for sequential execution. The matrix entry point defaults to one
 thread per process; the single-run entry point retains its previous four-thread
 default. CPU is the default device; `--cuda true` explicitly requests CUDA and
