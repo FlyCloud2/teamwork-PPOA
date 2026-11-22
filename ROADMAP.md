@@ -24,7 +24,7 @@
 |---|---|---|---|
 | **W1** | 11/02 – 11/08 | 仓库地基、环境钉版本、管线跑通 | `env.txt`、一次冒烟跑的 `progress.csv` + `config.json` + `stdout.log`、第一张曲线、偏差表起头 |
 | W2 | 11/09 – 11/15 | baseline 打通到全尺度 | 3 环境 × seed 0 × 100 万步；`logs/runs.csv` 索引；所有参数改成命令行开关；冻结 gymnasium / MuJoCo 版本 |
-| W3 | 11/16 – 11/22 | C1：论文的主 claim | `clip0.2` / `adaptiveKL` / `noclip` × 3 环境 × 3 种子 = 27 次；每个变体只是一个开关，不改源码 |
+| W3 | 11/16 – 11/22 | C1：论文的主 claim | `clip0.2` / `adaptiveKL` / `noclip` × 3 环境 × 3 种子 = 27 次；`noclip` 只是换 `--clip-coef`，`adaptiveKL` 需要先实现（计划原文写的是"不改源码"，实际新增了 KL 罚项实现，见下方 W3 详细清单） |
 | W4 | 11/23 – 11/29 | C2 + 自动出表 | `update_epochs` 1 与 10 的对照；`make_table.py` 自动生成 Paper vs Ours 表；报告开始动笔 |
 | W5 | 11/30 – 12/06 | Extension（单因子） | `K` 扫描 × 3 环境 × 3 种子，一张图，一句能站住的结论 |
 | W6 | 12/07 – 12/13 | 差异归因 + 初稿 | 至少一次受控重跑作为差异证据；偏差表定稿；报告初稿齐全 |
