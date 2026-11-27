@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Verify run artifacts; --baseline requires the complete W2 matrix."""
+"""Verify run artifacts; --baseline requires the complete W2 matrix and --c2 the W4 one."""
 import argparse
 import csv
 import hashlib
@@ -11,12 +11,17 @@ import sys
 from run import REPO, inspect_progress
 
 ENVS = ("HalfCheetah-v4", "Hopper-v4", "Walker2d-v4")
+SEEDS = (0, 1, 2)
 BASELINE = {"total_timesteps": 1_000_000, "num_envs": 1, "num_steps": 2048,
             "num_minibatches": 32, "update_epochs": 10, "learning_rate": 3e-4,
             "gamma": 0.99, "gae_lambda": 0.95, "clip_coef": 0.2, "target_kl": None,
             "anneal_lr": True, "norm_adv": True, "clip_vloss": True, "ent_coef": 0.0,
             "vf_coef": 0.5, "max_grad_norm": 0.5, "hidden_sizes": [64, 64],
             "activation": "tanh", "adam_eps": 1e-5, "cuda": False, "torch_deterministic": True}
+# [REPRO] W4 / C2：只允许 K 这一个因子在两个臂之间变化。
+C2_EPOCHS = (1, 10)
+C2_VARIANT = "clip0.2"
+C2_STEPS = 1_000_000
 
 
 def verify_run(path, root=REPO):
@@ -80,16 +85,74 @@ def verify_baseline(root=REPO, run_ids=None):
     return configs
 
 
+def verify_c2(root=REPO, run_ids=None):
+    """W4 / C2: 3 environments x 3 seeds x update_epochs {1, 10}, one factor changed.
+
+    Both arms must come from the same machines, thread count and package set;
+    every hyperparameter except ``update_epochs`` must be identical. That is what
+    makes "K" the only candidate explanation for a difference.
+    """
+    if run_ids is None:
+        manifest = json.loads((root / "logs" / "w4_c2.json").read_text(encoding="utf-8"))
+        run_ids = manifest["run_ids"]
+    expected = len(ENVS) * len(SEEDS) * len(C2_EPOCHS)
+    if len(run_ids) != expected or len(set(run_ids)) != expected:
+        raise ValueError(f"C2 requires exactly {expected} distinct runs")
+    configs = [verify_run(root / "runs" / rid, root) for rid in run_ids]
+    cells = {(config["env"], config["seed"], config["hyperparameters"]["update_epochs"])
+             for config in configs}
+    wanted = {(env, seed, epochs) for env in ENVS for seed in SEEDS for epochs in C2_EPOCHS}
+    if cells != wanted:
+        raise ValueError(f"C2 matrix incomplete: missing {sorted(wanted - cells)}, "
+                         f"unexpected {sorted(cells - wanted)}")
+    for config in configs:
+        if config["smoke"] or config["variant"] != C2_VARIANT:
+            raise ValueError("C2 requires non-smoke clip0.2 runs")
+        if config["hyperparameters"]["update_epochs"] not in C2_EPOCHS:
+            raise ValueError("C2 update_epochs must be 1 or 10")
+        if config["steps"] != C2_STEPS:
+            raise ValueError("C2 requires exactly 1,000,000 steps per run")
+        epochs = config["hyperparameters"]["update_epochs"]
+        if f"_k{epochs}_full" not in config["run_id"]:
+            raise ValueError(f"run id does not encode update_epochs={epochs}: {config['run_id']}")
+        if config.get("label") not in (None, f"k{epochs}"):
+            raise ValueError("recorded label disagrees with update_epochs")
+    # Environment and seed are supposed to differ across cells; the arms within a
+    # cell must not differ in anything but update_epochs.
+    reference = dict(configs[0]["hyperparameters"])
+    for key in ("update_epochs", "env_id", "seed"):
+        reference.pop(key, None)
+    for config in configs[1:]:
+        candidate = dict(config["hyperparameters"])
+        for key in ("update_epochs", "env_id", "seed"):
+            candidate.pop(key, None)
+        if candidate != reference:
+            raise ValueError(f"more than update_epochs differs: {config['run_id']}")
+    if len({config["threads"] for config in configs}) != 1:
+        raise ValueError("C2 thread counts differ")
+    if any(config["packages"] != configs[0]["packages"] for config in configs):
+        raise ValueError("C2 package versions differ")
+    if len({config["host"]["platform"] for config in configs}) != 1:
+        raise ValueError("C2 runs were produced on different platforms")
+    return configs
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--run", type=Path)
     parser.add_argument("--baseline", action="store_true")
+    parser.add_argument("--c2", action="store_true")
     parser.add_argument("--root", type=Path, default=REPO)
     args = parser.parse_args()
-    if not args.run and not args.baseline:
-        parser.error("choose --run or --baseline")
+    if not args.run and not args.baseline and not args.c2:
+        parser.error("choose --run, --baseline or --c2")
     try:
-        configs = verify_baseline(args.root) if args.baseline else [verify_run(args.run, args.root)]
+        if args.baseline:
+            configs = verify_baseline(args.root)
+        elif args.c2:
+            configs = verify_c2(args.root)
+        else:
+            configs = [verify_run(args.run, args.root)]
     except (OSError, ValueError, KeyError) as exc:
         print(f"FAIL: {exc}")
         return 1

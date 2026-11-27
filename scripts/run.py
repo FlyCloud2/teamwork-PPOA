@@ -11,6 +11,7 @@ import math
 import os
 from pathlib import Path
 import platform
+import re
 import shutil
 import subprocess
 import sys
@@ -111,6 +112,12 @@ def parse_runner_args(argv=None):
     parser.description = __doc__
     parser.add_argument("--env", dest="env_id", default=argparse.SUPPRESS, help="alias for --env-id")
     parser.add_argument("--variant", choices=VARIANTS, default="clip0.2")
+    # [REPRO] W4：同一 variant 下还要做单因子对照（例如 update_epochs=1 vs 10）。
+    # run_id 只由「时间 / 环境 / 种子 / variant / 类型」拼成，两个 profile 会撞名，
+    # 于是用 --label 显式写进 run_id：..._clip0.2_k1_full。它不传给训练器，
+    # 只是运行档案的标签，同时写进 config.json 以便溯源。
+    parser.add_argument("--label", default="",
+                        help="short suffix that distinguishes otherwise identical runs (e.g. k1); written into run_id and config.json")
     parser.add_argument("--smoke", action="store_true", help="20,000 steps; never baseline evidence")
     parser.add_argument("--threads", type=int, default=4, help="fixed OMP/MKL thread count")
     parser.add_argument("--dry-run", action="store_true", help="print resolved configuration without writing files")
@@ -119,6 +126,10 @@ def parse_runner_args(argv=None):
     args = parser.parse_args(argv)
     if args.threads <= 0:
         parser.error("--threads must be positive")
+    # A label becomes part of a directory name: allow only characters that cannot
+    # introduce a path separator, a glob wildcard or an ambiguous run_id.
+    if args.label and not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9.-]{0,23}", args.label):
+        parser.error("--label must be 1-24 characters of letters, digits, '.' or '-', starting alphanumeric")
     if args.variant in ("adaptiveKL", "adaptiveKL-capped", "adaptiveKL-tight"):
         # [REPRO] W3：论文 Table 1 的第二种代理目标 —— 自适应 KL 罚项。
         # 只切换策略代理目标，其余（种子、超参、步数预算、价值裁剪）与 clip0.2 完全一致，
@@ -171,12 +182,20 @@ def child_command(args, out):
     return cmd, hp
 
 
+def run_id(env_id, seed, variant, label="", smoke=False, now=None):
+    """Unique, self-describing run directory name."""
+    tag = "smoke" if smoke else "full"
+    rid = f"{now or dt.datetime.now():%Y%m%d-%H%M%S-%f}_{env_id}_seed{seed}_{variant}"
+    if label:
+        rid += f"_{label}"
+    return f"{rid}_{tag}"
+
+
 def main(argv=None):
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(errors="backslashreplace")
     args = parse_runner_args(argv)
-    tag = "smoke" if args.smoke else "full"
-    rid = f"{dt.datetime.now():%Y%m%d-%H%M%S-%f}_{args.env_id}_seed{args.seed}_{args.variant}_{tag}"
+    rid = run_id(args.env_id, args.seed, args.variant, args.label, args.smoke)
     # Environment IDs can include namespaces; never allow them to create nested output paths.
     rid = rid.replace("/", "_").replace("\\", "_")
     root = args.output_root.resolve()
@@ -199,6 +218,7 @@ def main(argv=None):
         "git_dirty": bool(git("status", "--porcelain", default="")),
         "source_sha256": {name: hashlib.sha256((REPO / name).read_bytes()).hexdigest() for name in sources},
         "variant": args.variant, "seed": args.seed, "steps": args.total_timesteps,
+        "label": args.label,
         "env": args.env_id, "threads": args.threads, "smoke": args.smoke,
         "hyperparameters": hp, "packages": packages,
         "host": {"platform": platform.platform(), "python": platform.python_version(), "cpu_count": os.cpu_count()},
