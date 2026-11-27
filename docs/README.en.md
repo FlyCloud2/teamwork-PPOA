@@ -5,12 +5,19 @@ Course project (teamwork-PPOA). We reproduce **Proximal Policy Optimization**
 and we ask whether the paper's central claim about *which surrogate objective works*
 survives our own measurements.
 
-> **Status: W3 (C1) complete - partially reproduced.** 27 runs of
+> **Status: W4 (C2 + automated tables) complete.** W3 delivered C1: 27 runs of
 > `clip0.2` / `adaptiveKL` / `noclip` across 3 environments x 3 seeds x 1,000,000
-> steps, plus 18 controlled runs with a bounded beta. Verdict: clipping beats
-> both alternatives, but the middle position could not be tested - all three beta
-> settings produce bit-identical trajectories. See the
-> [generated evidence report](w3_c1.md) and the [W2 baseline](w2_baseline.md).
+> steps plus 18 controlled runs with a bounded beta. Verdict: clipping beats both
+> alternatives, but the middle position could not be tested - all three beta
+> settings produce row-identical trajectories. W4 adds C2: `update_epochs` 1 vs
+> 10, both arms produced on one host, 3 envs x 3 seeds x 1,000,000 steps. K = 10
+> wins in 3/3 environments and in 9/9 same-seed pairs (+38% to +250% return, at
+> about 1.4x the wall-clock cost); with K = 1 `clipfrac` is 0.000 on every seed,
+> i.e. the clipping band is almost never entered, which is why the paper's default
+> K = 10 is not incidental. `scripts/make_table.py` now emits the Paper-vs-Ours
+> tables from the committed runs. See the [C1 evidence](w3_c1.md),
+> [C2 evidence](w4_c2.md), the generated [Paper vs Ours](paper_vs_ours.md) tables,
+> the [W2 baseline](w2_baseline.md) and the [report draft](report.md).
 
 ## What the paper claims, and what we test
 
@@ -86,6 +93,17 @@ python scripts/summarize_c1.py   # -> logs/c1_summary.json
 python scripts/plot_c1.py        # -> figures/c1_variants.png, figures/c1_curves.png
 ```
 
+The C2 (W4) matrix and its tables are produced the same way:
+
+```powershell
+python scripts/run_c2.py --jobs 9 --threads 1   # 18 runs: K = 1 / 10 x 3 envs x 3 seeds
+python scripts/verify_runs.py --c2              # one factor only, ids encode K
+python scripts/summarize_c2.py                  # -> logs/c2_summary.json
+python scripts/plot_c2.py                       # -> figures/c2_epochs.png, c2_curves.png
+python scripts/make_table.py                    # -> docs/paper_vs_ours.md
+python scripts/make_all.py                      # regenerate every artifact + checks
+```
+
 Use `--jobs 1` for sequential execution. The matrix entry point defaults to one
 thread per process; the single-run entry point retains its previous four-thread
 default. CPU is the default device; `--cuda true` explicitly requests CUDA and
@@ -117,6 +135,11 @@ bound at `1/d_target = 100` and at `1`. The three settings turned out to be
 numerically identical (see [w3_c1.md](w3_c1.md) §3), so this variant is not a
 valid test of the paper's middle position. Use `--variant custom` for a
 non-default clipping coefficient.
+
+W4's C2 adds no variant: the single factor is `--update-epochs`, and both arms are
+`clip0.2`. So that two profiles of the same variant cannot collide in `runs/`, the
+runner gained `--label` (for example `k1`), which is written into the run id and
+`config.json` and is **not** forwarded to the trainer.
 
 Raw training returns sampled at update boundaries are not evaluation scores.
 Single-seed results do not establish the C1 ordering. AI assistance and the

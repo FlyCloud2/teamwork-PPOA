@@ -57,3 +57,41 @@ comparing concurrent and sequential runs.
 
 Optional W&B/video flags require their own optional dependencies and are not
 used in W2. The default baseline needs no display or rendering.
+
+## W4 machine (2026-11-27)
+
+W4 ran on a third machine. An existing conda environment was reused after
+checking that it matches the pinned versions; nothing was installed for W4.
+
+```
+host      : Windows 11 26200, Intel i7-13650HX (14 cores / 20 logical), 31.6 GiB, CPU only
+python    : D:\miniconda3\envs\ppo-repro\python.exe, 3.10.22 (conda-forge)
+packages  : torch 2.4.1+cu121, gymnasium 0.29.1, mujoco 3.1.6, numpy 1.26.4,
+            matplotlib 3.9.2, pandas 2.2.3, tensorboard 2.17.1
+```
+
+`torch` is the CUDA build of the pinned version, used on CPU; the run
+`config.json` records it, and `docs/deviations.md` lists it as a W4 deviation.
+Version check and smoke before the matrix:
+
+```powershell
+$PpoPython = 'D:\miniconda3\envs\ppo-repro\python.exe'
+& $PpoPython -m unittest discover -s tests -v          # 26 tests, OK
+& $PpoPython scripts/run.py --env HalfCheetah-v4 --seed 0 --smoke --threads 1 --output-root D:\ppo_w4_probe
+# 20,000 steps in 23.1 s -> ~1,150 s for 1,000,000 steps on one thread
+& $PpoPython scripts/run_c2.py --jobs 9 --threads 1    # 18 runs, 9 concurrent
+```
+
+Nine processes share 20 logical cores, one OMP/MKL thread each. Wall times are
+recorded per run but are not compared with W2 or W3, which ran on other hosts.
+
+Two traps hit on this machine, both worth knowing before reading exit codes:
+
+1. **PowerShell + stderr.** Piping a Python command through `2>&1 | Select-String`
+   makes Windows PowerShell report failures as `NativeCommandError` and can leave
+   a non-zero shell status even when Python succeeded. For test runs, read the
+   `Ran N tests` / `OK` summary instead of trusting the shell status.
+2. **UTF-8 BOM.** `Set-Content -Encoding utf8` in Windows PowerShell 5.1 writes a
+   BOM. Python 3 then fails with `SyntaxError: invalid non-printable character
+   U+FEFF` on the first line. Source files must be written as UTF-8 **without**
+   BOM (an editor or `write_text(..., encoding="utf-8", newline="\n")`).

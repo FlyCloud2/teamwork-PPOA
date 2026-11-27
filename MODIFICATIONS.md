@@ -79,6 +79,30 @@ Source hashes are kept unchanged after the full runs to retain their provenance.
    mapping (`adaptiveKL`, `adaptiveKL-capped`, `adaptiveKL-tight`) including the
    requirement that they differ only in `kl_coef_max`.
 
+## W4 changes (2026-11-27)
+
+C2 changes **no training code**. `update_epochs` has been a first-class CLI
+parameter since W2, so both arms run the same vendored trainer and the same
+loss; the only runner-side change is a label suffix so that two profiles of the
+same variant cannot be confused in `runs/`:
+
+1. `scripts/run.py --label`: validated to `[A-Za-z0-9][A-Za-z0-9.-]{0,23}`,
+   written into the run directory name (`..._clip0.2_k1_full`) and into
+   `config.json` as `label`. It is **not** forwarded to the trainer, so it cannot
+   change a trajectory.
+2. `scripts/verify_runs.py --c2`: matrix verification that the two arms differ
+   in `update_epochs` and in nothing else (environments, seeds, threads, package
+   set and platform are checked separately), plus the requirement that the run id
+   encodes K.
+3. New evidence scripts, none of which is imported by the trainer:
+   `evidence.py` (run selection and aggregation), `run_c2.py` (18-run matrix),
+   `summarize_c2.py`, `plot_c2.py`, `make_table.py` (Paper-vs-Ours tables) and
+   `make_all.py` (regenerate every artifact).
+
+`src/ppo_args.py` and `src/ppo_continuous_action.py` are unchanged since W3.
+Every W4 run records their SHA-256 in `config.json`; the values match the
+delivered files, so the executed trainer is the reviewed one.
+
 ## Reproduce the upstream audit
 
 Run from the repository root with the tested Python environment:

@@ -29,7 +29,7 @@ C2_VARIANT = "clip0.2"
 
 
 def fmt(mean, std, digits=1):
-    return f"{mean:.{digits}f} 卤 {std:.{digits}f}"
+    return f"{mean:.{digits}f} ± {std:.{digits}f}"
 
 
 def load_paper(path=PAPER):
@@ -168,8 +168,8 @@ def main(argv=None):
     add("| Seeds | 3 | 3 (0 / 1 / 2) |")
     add("| Score | last 100 episodes, per-task shift-and-scale (random = 0, best = 1), "
         "averaged over 21 runs | raw training return, last 10 logged episodes, "
-        "mean 卤 std over seeds |")
-    add("| Reported variance | none | mean 卤 std over 3 seeds |")
+        "mean ± std over seeds |")
+    add("| Reported variance | none | mean ± std over 3 seeds |")
     add("| Environment versions | MuJoCo 1.x / `-v1` | Gymnasium 0.29.1, MuJoCo 3.1.6, `-v4` |")
     add("")
     add("Absolute values are **not** comparable across the two columns: the paper's score "
@@ -197,7 +197,7 @@ def main(argv=None):
         "objective on this task\", not \"worse than random\".")
     add("")
 
-    add("## Table 2. Per-task C1 detail (raw training return, mean 卤 std over 3 seeds)")
+    add("## Table 2. Per-task C1 detail (raw training return, mean ± std over 3 seeds)")
     add("")
     add("| Task | " + " | ".join(paper_cells[tier]["paper_label"] for tier in C1_TIERS)
         + " | Best |")
@@ -210,7 +210,7 @@ def main(argv=None):
     add("")
     add("The three beta settings `adaptiveKL`, `adaptiveKL-capped` and `adaptiveKL-tight` "
         "produce identical trajectories in this implementation, so the adaptive-KL tier is "
-        "inconclusive rather than negative: see `docs/w3_c1.md` 搂3 for the row-wise diff "
+        "inconclusive rather than negative: see `docs/w3_c1.md` §3 for the row-wise diff "
         "and the gradient-clipping explanation. The numbers for the two controlled variants "
         "are in `logs/c1_summary.json`.")
     add("")
@@ -223,14 +223,14 @@ def main(argv=None):
     add("")
     add("`Status` is mechanical: `consistent` when the paper's ordering holds in all three "
         "tasks, `partial` when it holds in some, `inconsistent` when it holds in none. The "
-        "interpretive verdict 鈥?including why one tier is `inconclusive` 鈥?is in "
-        "`docs/w3_c1.md` 搂4 and the report's results section.")
+        "interpretive verdict —including why one tier is `inconclusive` —is in "
+        "`docs/w3_c1.md` §4 and the report's results section.")
     add("")
 
     add("## Table 4. C2: what does repeating the batch for K epochs buy?")
     add("")
     add(f"Both arms were produced by `scripts/run_c2.py` on one host, {C2_VARIANT} everywhere, "
-        "3 environments 脳 3 seeds 脳 1,000,000 steps; only `update_epochs` differs. The K=10 "
+        "3 environments × 3 seeds × 1,000,000 steps; only `update_epochs` differs. The K=10 "
         "arm is not reused from W3 because those runs came from another machine.")
     add("")
     add("### Table 4a. Returns")
@@ -314,7 +314,8 @@ def main(argv=None):
                "k10_wins": k10_wins},
     }
     out_json.parent.mkdir(parents=True, exist_ok=True)
-    out_json.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    out_json.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n",
+                        encoding="utf-8", newline="\n")
 
     print("| Objective | Paper | Ours (ratio) | Rank HC/Ho/Wa |")
     for tier in C1_TIERS:

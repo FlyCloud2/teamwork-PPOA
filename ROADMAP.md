@@ -7,8 +7,8 @@
 
 | | |
 |---|---|
-| 今天 | 2026-11-15（周日） |
-| 当前周 | **W2：11/09 – 11/15** |
+| 今天 | 2026-11-27（周五） |
+| 当前周 | **W4：11/23 – 11/29** |
 | 周窗口 | 周一 00:00 – 周日 23:59（周检的统计口径就是这个窗口） |
 | 每周硬性要求 | 每人至少 1 条**已推送**的实质 commit；首行含学号 + 姓名 |
 | 分支策略 | 只推 `main`；本仓库规模不需要功能分支 |
@@ -65,6 +65,34 @@ W2 只打通基线，不把单种子训练曲线当作 C1 排序的证据。
 W3 的结论是**部分复现**：裁剪优于不裁剪、裁剪优于 KL 罚项这两条成立；
 但三个 β 设置训练轨迹逐行相同，说明我们的 KL 罚项实现退化成了"只最小化 KL"，
 **不能**用来判定论文关于中间那一档的排序。这是本轮的已知局限，写进了偏差表。
+
+## W4 详细清单（2026-11-27，本轮由张崇彬轮值）
+
+- [x] `scripts/run.py --label`：同一 variant 的单因子对照写进 run_id（`..._clip0.2_k1_full`），标签只进运行档案、不进训练器
+- [x] `scripts/run_c2.py` 跑 18 次：K=1 / K=10 × 3 环境 × 3 种子 × 100 万步，两个臂在同一台机器、同一依赖、同一预算下产生
+- [x] `scripts/verify_runs.py --c2`：两臂只允许 `update_epochs` 不同，环境/种子/线程/依赖/平台必须一致，run_id 必须编码 K
+- [x] `scripts/summarize_c2.py` + `plot_c2.py`：`logs/c2_summary.json` + 两张图
+- [x] `scripts/make_table.py`：Paper Table 1 vs Ours（mean±std、逐任务排名、子 claim 检查、run 溯源）
+- [x] `scripts/make_all.py`：一条命令重跑全部摘要、图、表并做证据校验
+- [x] 回归测试 13 → 26 项，全绿
+- [x] `docs/w4_c2.md`、生成的 `docs/paper_vs_ours.md`
+- [x] 报告 `setup` 与 `results` 两节起稿（`docs/report.md`）
+- [x] 偏差表补到 W2 13 + W3 7 + W4 12 = 32 行
+
+执行：`python scripts/run_c2.py --jobs 9 --threads 1`
+验收：`python scripts/verify_runs.py --c2`，然后 `python scripts/make_all.py`
+
+W4 的结论：**K = 10 是承重的默认值**。同样 1M 步预算下，K = 10 在 3/3 环境、
+9/9 同种子对胜出（+38%～+250%），代价约 1.4 倍墙钟；末 50 次更新的诊断量显示
+K = 1 时 `approx_kl` 只有 4–8×10⁻⁵、`clipfrac` 全为 0.000 —— 裁剪机制几乎不触发。
+这把 C2 和 C1 连起来：论文的裁剪只有在 K > 1 时才有东西可裁。
+局限：per-minibatch 优势归一化让 K 里同时混着"多归一化"，现有实现拆不开（W6 可补）。
+
+W4 不碰训练代码：`update_epochs` 从 W2 起就是命令行参数，两个臂跑的是同一份
+vendored trainer；runner 侧唯一改动是 `--label`。
+
+W4 没有做的事：不跑 C3 的 K 扫描（W5 的事）；不重跑 C1（W3 的 27 + 18 次仍是 C1
+证据，但要说明它们来自另一台机器，见 `docs/deviations.md` 的 W4 段）。
 
 
 ## W1 详细清单（历史）

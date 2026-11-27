@@ -3,7 +3,7 @@
     "paper": "Schulman, Wolski, Dhariwal, Radford, Klimov. Proximal Policy Optimization Algorithms. arXiv:1707.06347v2",
     "location": "Table 1, the row \"PPO on MuJoCo\"",
     "url": "https://arxiv.org/abs/1707.06347",
-    "cross_checked_in": "PPO reading notes in the course workspace (PPO_论文精读_arXiv1707.06347.md, section 8.1): the full 11-row table"
+    "cross_checked_in": "the paper PDF itself (PPO_1707.06347v2.pdf, page 6, Table 1, text extracted 2026-11-27); identical to the course reading notes section 8.1"
   },
   "paper_metric": "average normalised score over 7 MuJoCo tasks (-v1), 1,000,000 steps per run, 3 seeds, scored on the last 100 episodes; the paper reports one aggregate number per setting, without variance",
   "paper_normalisation": "per-task shift-and-scale with a random policy = 0 and the best result = 1, then averaged over 21 runs; the reference scores behind that scaling are not published",

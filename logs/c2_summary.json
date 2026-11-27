@@ -1,0 +1,326 @@
+{
+  "metric": "mean raw training return over the last 10 logged episodes of a run, then mean +- std over 3 seeds",
+  "variant": "clip0.2",
+  "arms": [
+    1,
+    10
+  ],
+  "steps_per_run": 1000000,
+  "rows": [
+    {
+      "env": "HalfCheetah-v4",
+      "k1": {
+        "mean": 772.6843073527019,
+        "std": 32.162554353386106,
+        "wall_time_s": 1202.156,
+        "seeds": [
+          {
+            "seed": 0,
+            "run": "20261127-155118-732543_HalfCheetah-v4_seed0_clip0.2_k1_full",
+            "wall_time_s": 1204.765,
+            "tail_mean": 793.8444396972657,
+            "diagnostics": {
+              "clipfrac": 0.0,
+              "approx_kl": 7.683704917610612e-05,
+              "entropy": 7.912591609954834,
+              "explained_variance": 0.6033398649096489
+            }
+          },
+          {
+            "seed": 1,
+            "run": "20261127-155118-814204_HalfCheetah-v4_seed1_clip0.2_k1_full",
+            "wall_time_s": 1203.375,
+            "tail_mean": 735.6728866577148,
+            "diagnostics": {
+              "clipfrac": 0.0,
+              "approx_kl": 6.424631509517553e-05,
+              "entropy": 7.79187087059021,
+              "explained_variance": 0.6065357312560081
+            }
+          },
+          {
+            "seed": 2,
+            "run": "20261127-155118-882871_HalfCheetah-v4_seed2_clip0.2_k1_full",
+            "wall_time_s": 1198.328,
+            "tail_mean": 788.535595703125,
+            "diagnostics": {
+              "clipfrac": 0.0,
+              "approx_kl": 6.348691466783408e-05,
+              "entropy": 7.930851764678955,
+              "explained_variance": 0.5927723343670368
+            }
+          }
+        ],
+        "diagnostics": {
+          "clipfrac": 0.0,
+          "approx_kl": 6.819009297970524e-05,
+          "entropy": 7.878438081741333,
+          "explained_variance": 0.6008826435108979
+        }
+      },
+      "k10": {
+        "mean": 2247.8347696940104,
+        "std": 1411.849719144439,
+        "wall_time_s": 1767.625,
+        "seeds": [
+          {
+            "seed": 0,
+            "run": "20261127-155118-775521_HalfCheetah-v4_seed0_clip0.2_k10_full",
+            "wall_time_s": 1766.469,
+            "tail_mean": 1421.1635864257812,
+            "diagnostics": {
+              "clipfrac": 0.0550322265625,
+              "approx_kl": 0.0070442468280089085,
+              "entropy": 2.397630286216736,
+              "explained_variance": 0.10465126156806946
+            }
+          },
+          {
+            "seed": 1,
+            "run": "20261127-155118-850393_HalfCheetah-v4_seed1_clip0.2_k10_full",
+            "wall_time_s": 1767.484,
+            "tail_mean": 1444.2970336914063,
+            "diagnostics": {
+              "clipfrac": 0.058337890625,
+              "approx_kl": 0.00737862972127914,
+              "entropy": 1.864752631187439,
+              "explained_variance": 0.15835098221898078
+            }
+          },
+          {
+            "seed": 2,
+            "run": "20261127-155118-917468_HalfCheetah-v4_seed2_clip0.2_k10_full",
+            "wall_time_s": 1768.922,
+            "tail_mean": 3878.0436889648436,
+            "diagnostics": {
+              "clipfrac": 0.05473828125,
+              "approx_kl": 0.007314702997828135,
+              "entropy": 2.439794464111328,
+              "explained_variance": 0.5469662142544984
+            }
+          }
+        ],
+        "diagnostics": {
+          "clipfrac": 0.0560361328125,
+          "approx_kl": 0.0072458598490387285,
+          "entropy": 2.234059127171834,
+          "explained_variance": 0.2699894860138496
+        }
+      },
+      "delta": 1475.1504623413084,
+      "ratio": 2.9091243969938123,
+      "winner": "k10"
+    },
+    {
+      "env": "Hopper-v4",
+      "k1": {
+        "mean": 1282.825755818685,
+        "std": 156.82469825011495,
+        "wall_time_s": 1317.057,
+        "seeds": [
+          {
+            "seed": 0,
+            "run": "20261127-155118-984159_Hopper-v4_seed0_clip0.2_k1_full",
+            "wall_time_s": 1313.156,
+            "tail_mean": 1455.7857452392577,
+            "diagnostics": {
+              "clipfrac": 0.0,
+              "approx_kl": 3.798107927039496e-05,
+              "entropy": 3.8678724193572998,
+              "explained_variance": 0.9629599712975323
+            }
+          },
+          {
+            "seed": 1,
+            "run": "20261127-155119-010752_Hopper-v4_seed1_clip0.2_k1_full",
+            "wall_time_s": 1303.734,
+            "tail_mean": 1242.7959228515624,
+            "diagnostics": {
+              "clipfrac": 0.0,
+              "approx_kl": 3.4534744918346406e-05,
+              "entropy": 3.963629655838013,
+              "explained_variance": 0.9872648219205439
+            }
+          },
+          {
+            "seed": 2,
+            "run": "20261127-161123-653723_Hopper-v4_seed2_clip0.2_k1_full",
+            "wall_time_s": 1334.281,
+            "tail_mean": 1149.8955993652344,
+            "diagnostics": {
+              "clipfrac": 0.0,
+              "approx_kl": 3.997901868489251e-05,
+              "entropy": 3.880561661720276,
+              "explained_variance": 0.9754014852270484
+            }
+          }
+        ],
+        "diagnostics": {
+          "clipfrac": 0.0,
+          "approx_kl": 3.749828095787796e-05,
+          "entropy": 3.9040212456385297,
+          "explained_variance": 0.9752087594817082
+        }
+      },
+      "k10": {
+        "mean": 1775.3647705078126,
+        "std": 389.6512254387912,
+        "wall_time_s": 1851.5990000000002,
+        "seeds": [
+          {
+            "seed": 0,
+            "run": "20261127-155118-949549_Hopper-v4_seed0_clip0.2_k10_full",
+            "wall_time_s": 1863.547,
+            "tail_mean": 2159.5015258789062,
+            "diagnostics": {
+              "clipfrac": 0.033962890625,
+              "approx_kl": 0.005047979432565626,
+              "entropy": 0.9425177335739136,
+              "explained_variance": 0.9763815491925925
+            }
+          },
+          {
+            "seed": 1,
+            "run": "20261127-161118-456422_Hopper-v4_seed1_clip0.2_k10_full",
+            "wall_time_s": 1844.594,
+            "tail_mean": 1380.4237915039062,
+            "diagnostics": {
+              "clipfrac": 0.028605468749999998,
+              "approx_kl": 0.004550332089711446,
+              "entropy": 1.914895989894867,
+              "explained_variance": 0.9444273577909916
+            }
+          },
+          {
+            "seed": 2,
+            "run": "20261127-161124-809787_Hopper-v4_seed2_clip0.2_k10_full",
+            "wall_time_s": 1846.656,
+            "tail_mean": 1786.168994140625,
+            "diagnostics": {
+              "clipfrac": 0.028626953125,
+              "approx_kl": 0.004707638863474131,
+              "entropy": 2.4241998624801635,
+              "explained_variance": 0.8350400740653277
+            }
+          }
+        ],
+        "diagnostics": {
+          "clipfrac": 0.0303984375,
+          "approx_kl": 0.004768650128583734,
+          "entropy": 1.7605378619829812,
+          "explained_variance": 0.9186163270163039
+        }
+      },
+      "delta": 492.5390146891277,
+      "ratio": 1.3839484921900362,
+      "winner": "k10"
+    },
+    {
+      "env": "Walker2d-v4",
+      "k1": {
+        "mean": 1046.2088836669923,
+        "std": 435.9627828461864,
+        "wall_time_s": 1307.4166666666667,
+        "seeds": [
+          {
+            "seed": 0,
+            "run": "20261127-161304-334454_Walker2d-v4_seed0_clip0.2_k1_full",
+            "wall_time_s": 1340.5,
+            "tail_mean": 575.856088256836,
+            "diagnostics": {
+              "clipfrac": 0.0,
+              "approx_kl": 5.888799412389289e-05,
+              "entropy": 7.945257711410522,
+              "explained_variance": 0.9852028126455843
+            }
+          },
+          {
+            "seed": 1,
+            "run": "20261127-162048-095134_Walker2d-v4_seed1_clip0.2_k1_full",
+            "wall_time_s": 1290.359,
+            "tail_mean": 1436.754949951172,
+            "diagnostics": {
+              "clipfrac": 0.0,
+              "approx_kl": 6.932186583682664e-05,
+              "entropy": 7.891946439743042,
+              "explained_variance": 0.8816907672584057
+            }
+          },
+          {
+            "seed": 2,
+            "run": "20261127-162049-256889_Walker2d-v4_seed2_clip0.2_k1_full",
+            "wall_time_s": 1291.391,
+            "tail_mean": 1126.0156127929688,
+            "diagnostics": {
+              "clipfrac": 0.0,
+              "approx_kl": 5.1517774247429314e-05,
+              "entropy": 7.834204912185669,
+              "explained_variance": 0.9167532509565354
+            }
+          }
+        ],
+        "diagnostics": {
+          "clipfrac": 0.0,
+          "approx_kl": 5.990921140271629e-05,
+          "entropy": 7.890469687779745,
+          "explained_variance": 0.9278822769535084
+        }
+      },
+      "k10": {
+        "mean": 3688.046790568034,
+        "std": 856.5686259737379,
+        "wall_time_s": 1697.2240000000002,
+        "seeds": [
+          {
+            "seed": 0,
+            "run": "20261127-161313-694009_Walker2d-v4_seed0_clip0.2_k10_full",
+            "wall_time_s": 1808.625,
+            "tail_mean": 2775.8118560791017,
+            "diagnostics": {
+              "clipfrac": 0.043321289062500004,
+              "approx_kl": 0.006234059714624891,
+              "entropy": 4.057480411529541,
+              "explained_variance": 0.7838907311856746
+            }
+          },
+          {
+            "seed": 1,
+            "run": "20261127-162048-128655_Walker2d-v4_seed1_clip0.2_k10_full",
+            "wall_time_s": 1656.75,
+            "tail_mean": 3813.1349853515626,
+            "diagnostics": {
+              "clipfrac": 0.0520205078125,
+              "approx_kl": 0.007674590164970141,
+              "entropy": 2.2285096263885498,
+              "explained_variance": 0.6857837302237749
+            }
+          },
+          {
+            "seed": 2,
+            "run": "20261127-162224-063132_Walker2d-v4_seed2_clip0.2_k10_full",
+            "wall_time_s": 1626.297,
+            "tail_mean": 4475.193530273437,
+            "diagnostics": {
+              "clipfrac": 0.04400390625,
+              "approx_kl": 0.00645802239785553,
+              "entropy": 3.1815307474136354,
+              "explained_variance": 0.7224488534033299
+            }
+          }
+        ],
+        "diagnostics": {
+          "clipfrac": 0.04644856770833333,
+          "approx_kl": 0.006788890759150187,
+          "entropy": 3.1558402617772416,
+          "explained_variance": 0.7307077716042598
+        }
+      },
+      "delta": 2641.8379069010416,
+      "ratio": 3.5251533877645196,
+      "winner": "k10"
+    }
+  ],
+  "problems": [],
+  "k10_wins": 3,
+  "k1_wins": 0
+}

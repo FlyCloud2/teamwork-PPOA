@@ -69,7 +69,8 @@ def main(argv=None):
     logs = root / "logs"
     logs.mkdir(parents=True, exist_ok=True)
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(summary, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    out.write_text(json.dumps(summary, indent=2, ensure_ascii=False) + "\n",
+                   encoding="utf-8", newline="\n")
 
     print(f"verified environments: {len(comparisons)} / {len(ENVS)}, problems: {len(problems)}")
     for problem in problems:

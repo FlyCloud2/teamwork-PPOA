@@ -2,11 +2,17 @@
 
 课程项目（teamwork-PPOA）。我们从论文本身复现近端策略优化（Proximal Policy Optimization，arXiv:1707.06347v2），而不是调用框架里现成的 `PPO()`；并且检验论文关于"三种代理目标里哪一种真正有效"的核心主张，能否在我们自己的测量中成立。
 
-> **状态：第 3 周（11/16 – 11/22），C1 主对照已完成。** 3 环境 × 3 种子 × 1,000,000 步的
-> `clip0.2` / `adaptiveKL` / `noclip` 共 27 次已完成，另有 18 次受控对照
-> （`adaptiveKL-capped`、`adaptiveKL-tight`）。裁决是**部分复现**：裁剪优于两端成立，
-> 中间那一档在我们的实现下退化、无法判定。结果与原始证据见 [`docs/w3_c1.md`](docs/w3_c1.md)，
-> 基线见 [`docs/w2_baseline.md`](docs/w2_baseline.md)。英文版见 [`docs/README.en.md`](docs/README.en.md)。
+> **状态：第 4 周（11/23 – 11/29），C2 与自动出表已完成。** W3 的 C1 主对照
+> （27 次 + 18 次受控）裁决是**部分复现**：裁剪优于两端成立，中间那一档在我们的实现下
+> 退化、无法判定。W4 在同一台机器上补齐了 C2：`update_epochs` 1 与 10 × 3 环境 ×
+> 3 种子 × 100 万步共 18 次，**K = 10 在 3/3 环境、9/9 同种子对胜出**
+> （+38%～+250%，墙钟约 1.4 倍）；末 50 次更新的诊断量显示 K = 1 时 `clipfrac` 全为
+> 0.000、裁剪机制几乎不触发，这解释了论文默认 K = 10 为什么不是随手定的。
+> 同时用 `scripts/make_table.py` 从 `runs/` 自动生成 Paper vs Ours 表。C1 结果见
+> [`docs/w3_c1.md`](docs/w3_c1.md)，C2 见 [`docs/w4_c2.md`](docs/w4_c2.md)，
+> 生成的对比表见 [`docs/paper_vs_ours.md`](docs/paper_vs_ours.md)，基线见
+> [`docs/w2_baseline.md`](docs/w2_baseline.md)，报告初稿见
+> [`docs/report.md`](docs/report.md)。英文版见 [`docs/README.en.md`](docs/README.en.md)。
 
 ## 论文主张是什么，我们检验什么
 
@@ -62,6 +68,16 @@ python scripts/verify_runs.py --baseline
 python scripts/plot.py --baseline --out figures/w2_baseline.png
 python scripts/summarize_baseline.py
 
+# W4：C2 —— 同一批数据重复 1 个 vs 10 个 epoch，18 次，9 个进程并行
+python scripts/run_c2.py --jobs 9 --threads 1
+python scripts/verify_runs.py --c2
+python scripts/summarize_c2.py
+python scripts/plot_c2.py
+python scripts/make_table.py            # -> docs/paper_vs_ours.md
+
+# 一条命令重跑全部派生证据（摘要、图、表、校验）
+python scripts/make_all.py
+
 # 回归检查（含真实短训练、失败处理和并发索引）
 python -m unittest discover -s tests -v
 ```
@@ -83,6 +99,10 @@ python -m unittest discover -s tests -v
 β 的具体数值不再影响更新；因此在我们的设置里这一档**无法作为论文中间位置的检验**，
 详见 [`docs/w3_c1.md`](docs/w3_c1.md) §3。非默认裁剪系数使用 `--variant custom --clip-coef ...`。
 
+W4 的 C2 **不新增变体**：单因子是 `--update-epochs`，两个臂都用 `clip0.2`。为了让
+"同一 variant 的两个 profile" 在 `runs/` 里不撞名，runner 增加了 `--label`（例如 `k1`），
+它只写进 run_id 与 `config.json`，**不传给训练器**，所以不可能改变轨迹。
+
 验收以 `logs/w2_baseline.json` 指定的三个完整 run 为准，不能仅看返回码或请求步数。失败与冒烟记录保留在索引中，但不会进入 W2 结果。已记录的算法与测量差异见 [`docs/deviations.md`](docs/deviations.md)。
 
 每个 run 目录都是自解释的，这正是本仓库的设计目的：
@@ -102,17 +122,27 @@ src/ppo_continuous_action.py   vendored 的 CleanRL PPO + [REPRO] 日志钩子
 src/ppo_args.py                runner 与训练器共享的参数、默认值与校验
 scripts/run.py                 唯一跑训练的入口
 scripts/run_baseline.py        W2 三环境矩阵与验收清单
-scripts/verify_runs.py         检查步数、指标、配置、索引和冻结版本
+scripts/run_c2.py              W4 的 C2 矩阵（K=1/10 × 3 环境 × 3 种子）与验收清单
+scripts/verify_runs.py         检查步数、指标、配置、索引和冻结版本（--baseline / --c2）
+scripts/evidence.py            共享的 run 选取与聚合（tail-10、末 50 次更新诊断量）
 scripts/plot.py                progress.csv -> PNG（图从不手画）
 scripts/plot_c1.py             C1 五变体对照：柱状图 + 学习曲线
+scripts/plot_c2.py             C2 两臂对照：柱状图 + 学习曲线
 scripts/summarize_c1.py        校验 45 个 C1 run -> logs/c1_summary.json
+scripts/summarize_c2.py        校验 18 个 C2 run -> logs/c2_summary.json
 scripts/summarize_baseline.py  完整 W2 run -> 可追溯摘要
+scripts/make_table.py          Paper Table 1 vs Ours -> docs/paper_vs_ours.md
+scripts/make_all.py            一条命令重跑全部摘要、图、表与证据校验
 scripts/collect_env.py         机器与库版本快照 -> env.txt
 scripts/weekly_check.ps1       推送前自查，规则与评分项一一对应
 configs/base.yaml              论文 Table 3 + 实验矩阵（作为记录，不作为真源）
+configs/paper_table1.json      论文 Table 1 原值（机器可读，出表脚本读取）
 docs/setup.md                  装环境时真实踩过的坑
 docs/deviations.md             与论文的每一处差异
 docs/w3_c1.md                  C1 的结果、裁决与局限（数字全部来自脚本）
+docs/w4_c2.md                  C2 的结果、裁决与局限（数字全部来自脚本）
+docs/paper_vs_ours.md          （生成）Paper vs Ours 表，勿手改
+docs/report.md                 报告初稿：setup 与 results 已写
 runs/                          提交进仓库的证据，一个 run 一个目录
 logs/runs.csv                  所有 run 的索引
 ```

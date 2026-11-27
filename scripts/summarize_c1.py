@@ -87,7 +87,8 @@ def main():
 
     out = REPO / "logs" / "c1_summary.json"
     out.write_text(json.dumps({"rows": rows, "problems": problems},
-                              indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+                              indent=2, ensure_ascii=False) + "\n",
+                   encoding="utf-8", newline="\n")
     print(f"\nwritten: {out}")
     return 1 if problems else 0
 

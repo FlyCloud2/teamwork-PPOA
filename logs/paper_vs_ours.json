@@ -1,0 +1,355 @@
+{
+  "generated_by": "scripts/make_table.py",
+  "paper": {
+    "source": {
+      "paper": "Schulman, Wolski, Dhariwal, Radford, Klimov. Proximal Policy Optimization Algorithms. arXiv:1707.06347v2",
+      "location": "Table 1, the row \"PPO on MuJoCo\"",
+      "url": "https://arxiv.org/abs/1707.06347",
+      "cross_checked_in": "the paper PDF itself (PPO_1707.06347v2.pdf, page 6, Table 1, text extracted 2026-11-27); identical to the course reading notes section 8.1"
+    },
+    "paper_metric": "average normalised score over 7 MuJoCo tasks (-v1), 1,000,000 steps per run, 3 seeds, scored on the last 100 episodes; the paper reports one aggregate number per setting, without variance",
+    "paper_normalisation": "per-task shift-and-scale with a random policy = 0 and the best result = 1, then averaged over 21 runs; the reference scores behind that scaling are not published",
+    "cells": [
+      {
+        "condition": "clip0.2",
+        "paper_label": "Clipping, eps = 0.2",
+        "paper_score": 0.82
+      },
+      {
+        "condition": "adaptiveKL",
+        "paper_label": "Adaptive KL, d_targ = 0.01",
+        "paper_score": 0.74
+      },
+      {
+        "condition": "noclip",
+        "paper_label": "No clipping or penalty",
+        "paper_score": -0.39
+      }
+    ],
+    "context": [
+      {
+        "paper_label": "Clipping, eps = 0.1",
+        "paper_score": 0.76
+      },
+      {
+        "paper_label": "Clipping, eps = 0.3",
+        "paper_score": 0.7
+      },
+      {
+        "paper_label": "Adaptive KL, d_targ = 0.003",
+        "paper_score": 0.68
+      },
+      {
+        "paper_label": "Adaptive KL, d_targ = 0.03",
+        "paper_score": 0.71
+      },
+      {
+        "paper_label": "Fixed KL, beta = 0.3",
+        "paper_score": 0.62
+      },
+      {
+        "paper_label": "Fixed KL, beta = 1.0",
+        "paper_score": 0.71
+      },
+      {
+        "paper_label": "Fixed KL, beta = 3.0",
+        "paper_score": 0.72
+      },
+      {
+        "paper_label": "Fixed KL, beta = 10.0",
+        "paper_score": 0.69
+      }
+    ],
+    "notes": [
+      "The paper's overall winner is eps = 0.2 (0.82) and its worst setting is no clipping (-0.39, below the random-policy anchor).",
+      "d_targ = 0.01 is the paper's best adaptive-KL setting, which is why the C1 KL arm re-implements that one.",
+      "The paper reports no std or confidence interval, so 0.82 vs 0.74 carries no published significance claim; our 3-seed mean +- std is a contribution beyond the original.",
+      "Our runs use 3 of the 7 tasks (HalfCheetah, Hopper, Walker2d) and modern Gymnasium v4 environments, so the aggregate is a 3-task subset, not the paper's 7-task average."
+    ]
+  },
+  "c1": {
+    "metric": "tail-10 raw training return, mean +- std over 3 seeds",
+    "rows": [
+      {
+        "env": "HalfCheetah-v4",
+        "tiers": {
+          "clip0.2": {
+            "mean": 1944.9994527180988,
+            "std": 1006.1088775307675,
+            "rank": 1,
+            "ratio": 1.0,
+            "runs": [
+              "20261121-215526-109163_HalfCheetah-v4_seed0_clip0.2_full",
+              "20261121-222753-880489_HalfCheetah-v4_seed1_clip0.2_full",
+              "20261121-230012-819078_HalfCheetah-v4_seed2_clip0.2_full"
+            ]
+          },
+          "adaptiveKL": {
+            "mean": 596.2341229756673,
+            "std": 109.8083706121033,
+            "rank": 2,
+            "ratio": 0.3065471931842663,
+            "runs": [
+              "20261121-215526-114994_HalfCheetah-v4_seed0_adaptiveKL_full",
+              "20261121-222757-404490_HalfCheetah-v4_seed1_adaptiveKL_full",
+              "20261121-230031-179462_HalfCheetah-v4_seed2_adaptiveKL_full"
+            ]
+          },
+          "noclip": {
+            "mean": 375.0418820858002,
+            "std": 422.4127625965191,
+            "rank": 3,
+            "ratio": 0.19282364401783583,
+            "runs": [
+              "20261121-215526-138870_HalfCheetah-v4_seed0_noclip_full",
+              "20261121-222808-938252_HalfCheetah-v4_seed1_noclip_full",
+              "20261121-230044-488791_HalfCheetah-v4_seed2_noclip_full"
+            ]
+          }
+        }
+      },
+      {
+        "env": "Hopper-v4",
+        "tiers": {
+          "clip0.2": {
+            "mean": 1430.7165140787758,
+            "std": 726.3365503695802,
+            "rank": 1,
+            "ratio": 1.0,
+            "runs": [
+              "20261121-215526-155533_Hopper-v4_seed0_clip0.2_full",
+              "20261121-223018-319976_Hopper-v4_seed1_clip0.2_full",
+              "20261121-230452-762856_Hopper-v4_seed2_clip0.2_full"
+            ]
+          },
+          "adaptiveKL": {
+            "mean": 479.64099973042806,
+            "std": 327.35539448527567,
+            "rank": 2,
+            "ratio": 0.3352453089138096,
+            "runs": [
+              "20261121-215526-155533_Hopper-v4_seed0_adaptiveKL_full",
+              "20261121-223018-382754_Hopper-v4_seed1_adaptiveKL_full",
+              "20261121-230508-165306_Hopper-v4_seed2_adaptiveKL_full"
+            ]
+          },
+          "noclip": {
+            "mean": 355.3939684549967,
+            "std": 451.0476579223712,
+            "rank": 3,
+            "ratio": 0.24840278626673387,
+            "runs": [
+              "20261121-215526-146475_Hopper-v4_seed0_noclip_full",
+              "20261121-223020-582010_Hopper-v4_seed1_noclip_full",
+              "20261121-230508-218045_Hopper-v4_seed2_noclip_full"
+            ]
+          }
+        }
+      },
+      {
+        "env": "Walker2d-v4",
+        "tiers": {
+          "clip0.2": {
+            "mean": 2297.471506245931,
+            "std": 718.4862348121495,
+            "rank": 1,
+            "ratio": 1.0,
+            "runs": [
+              "20261121-215526-141378_Walker2d-v4_seed0_clip0.2_full",
+              "20261121-223024-522085_Walker2d-v4_seed1_clip0.2_full",
+              "20261121-230510-157697_Walker2d-v4_seed2_clip0.2_full"
+            ]
+          },
+          "adaptiveKL": {
+            "mean": 209.7859157681465,
+            "std": 181.16970287541835,
+            "rank": 3,
+            "ratio": 0.09131165074205284,
+            "runs": [
+              "20261121-215526-144460_Walker2d-v4_seed0_adaptiveKL_full",
+              "20261121-223035-470443_Walker2d-v4_seed1_adaptiveKL_full",
+              "20261121-230546-934875_Walker2d-v4_seed2_adaptiveKL_full"
+            ]
+          },
+          "noclip": {
+            "mean": 261.8960866858562,
+            "std": 227.0180760819223,
+            "rank": 2,
+            "ratio": 0.11399318162330312,
+            "runs": [
+              "20261121-215526-134976_Walker2d-v4_seed0_noclip_full",
+              "20261121-223056-852731_Walker2d-v4_seed1_noclip_full",
+              "20261121-230547-167876_Walker2d-v4_seed2_noclip_full"
+            ]
+          }
+        }
+      }
+    ],
+    "normalised_mean": {
+      "clip0.2": 1.0,
+      "adaptiveKL": 0.24436805094670958,
+      "noclip": 0.18507320396929094
+    },
+    "subclaims": [
+      {
+        "claim": "clipping (eps = 0.2) beats no clipping",
+        "held_in": 3,
+        "of": 3,
+        "environments": [
+          "HalfCheetah-v4",
+          "Hopper-v4",
+          "Walker2d-v4"
+        ],
+        "status": "consistent"
+      },
+      {
+        "claim": "clipping (eps = 0.2) beats adaptive KL",
+        "held_in": 3,
+        "of": 3,
+        "environments": [
+          "HalfCheetah-v4",
+          "Hopper-v4",
+          "Walker2d-v4"
+        ],
+        "status": "consistent"
+      },
+      {
+        "claim": "adaptive KL beats no clipping",
+        "held_in": 2,
+        "of": 3,
+        "environments": [
+          "HalfCheetah-v4",
+          "Hopper-v4"
+        ],
+        "status": "partial"
+      },
+      {
+        "claim": "the full ordering clip > adaptive KL > no clipping",
+        "held_in": 2,
+        "of": 3,
+        "environments": [
+          "HalfCheetah-v4",
+          "Hopper-v4"
+        ],
+        "status": "partial"
+      }
+    ]
+  },
+  "c2": {
+    "metric": "tail-10 raw training return, mean +- std over 3 seeds",
+    "rows": [
+      {
+        "env": "HalfCheetah-v4",
+        "k1": {
+          "mean": 772.6843073527019,
+          "std": 32.162554353386106,
+          "wall_time_s": 1202.156,
+          "diagnostics": {
+            "clipfrac": 0.0,
+            "approx_kl": 6.819009297970524e-05,
+            "entropy": 7.878438081741333,
+            "explained_variance": 0.6008826435108979
+          },
+          "runs": [
+            "20261127-155118-732543_HalfCheetah-v4_seed0_clip0.2_k1_full",
+            "20261127-155118-814204_HalfCheetah-v4_seed1_clip0.2_k1_full",
+            "20261127-155118-882871_HalfCheetah-v4_seed2_clip0.2_k1_full"
+          ]
+        },
+        "k10": {
+          "mean": 2247.8347696940104,
+          "std": 1411.849719144439,
+          "wall_time_s": 1767.625,
+          "diagnostics": {
+            "clipfrac": 0.0560361328125,
+            "approx_kl": 0.0072458598490387285,
+            "entropy": 2.234059127171834,
+            "explained_variance": 0.2699894860138496
+          },
+          "runs": [
+            "20261127-155118-775521_HalfCheetah-v4_seed0_clip0.2_k10_full",
+            "20261127-155118-850393_HalfCheetah-v4_seed1_clip0.2_k10_full",
+            "20261127-155118-917468_HalfCheetah-v4_seed2_clip0.2_k10_full"
+          ]
+        },
+        "delta": 1475.1504623413084,
+        "winner": "k10"
+      },
+      {
+        "env": "Hopper-v4",
+        "k1": {
+          "mean": 1282.825755818685,
+          "std": 156.82469825011495,
+          "wall_time_s": 1317.057,
+          "diagnostics": {
+            "clipfrac": 0.0,
+            "approx_kl": 3.749828095787796e-05,
+            "entropy": 3.9040212456385297,
+            "explained_variance": 0.9752087594817082
+          },
+          "runs": [
+            "20261127-155118-984159_Hopper-v4_seed0_clip0.2_k1_full",
+            "20261127-155119-010752_Hopper-v4_seed1_clip0.2_k1_full",
+            "20261127-161123-653723_Hopper-v4_seed2_clip0.2_k1_full"
+          ]
+        },
+        "k10": {
+          "mean": 1775.3647705078126,
+          "std": 389.6512254387912,
+          "wall_time_s": 1851.5990000000002,
+          "diagnostics": {
+            "clipfrac": 0.0303984375,
+            "approx_kl": 0.004768650128583734,
+            "entropy": 1.7605378619829812,
+            "explained_variance": 0.9186163270163039
+          },
+          "runs": [
+            "20261127-155118-949549_Hopper-v4_seed0_clip0.2_k10_full",
+            "20261127-161118-456422_Hopper-v4_seed1_clip0.2_k10_full",
+            "20261127-161124-809787_Hopper-v4_seed2_clip0.2_k10_full"
+          ]
+        },
+        "delta": 492.5390146891277,
+        "winner": "k10"
+      },
+      {
+        "env": "Walker2d-v4",
+        "k1": {
+          "mean": 1046.2088836669923,
+          "std": 435.9627828461864,
+          "wall_time_s": 1307.4166666666667,
+          "diagnostics": {
+            "clipfrac": 0.0,
+            "approx_kl": 5.990921140271629e-05,
+            "entropy": 7.890469687779745,
+            "explained_variance": 0.9278822769535084
+          },
+          "runs": [
+            "20261127-161304-334454_Walker2d-v4_seed0_clip0.2_k1_full",
+            "20261127-162048-095134_Walker2d-v4_seed1_clip0.2_k1_full",
+            "20261127-162049-256889_Walker2d-v4_seed2_clip0.2_k1_full"
+          ]
+        },
+        "k10": {
+          "mean": 3688.046790568034,
+          "std": 856.5686259737379,
+          "wall_time_s": 1697.2240000000002,
+          "diagnostics": {
+            "clipfrac": 0.04644856770833333,
+            "approx_kl": 0.006788890759150187,
+            "entropy": 3.1558402617772416,
+            "explained_variance": 0.7307077716042598
+          },
+          "runs": [
+            "20261127-161313-694009_Walker2d-v4_seed0_clip0.2_k10_full",
+            "20261127-162048-128655_Walker2d-v4_seed1_clip0.2_k10_full",
+            "20261127-162224-063132_Walker2d-v4_seed2_clip0.2_k10_full"
+          ]
+        },
+        "delta": 2641.8379069010416,
+        "winner": "k10"
+      }
+    ],
+    "k10_wins": 3
+  }
+}

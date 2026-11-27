@@ -22,6 +22,10 @@ BASELINE = {"total_timesteps": 1_000_000, "num_envs": 1, "num_steps": 2048,
 C2_EPOCHS = (1, 10)
 C2_VARIANT = "clip0.2"
 C2_STEPS = 1_000_000
+# Per-run bookkeeping that is *not* an experimental factor: the environment/seed
+# identify the cell, and the output paths necessarily encode the run directory.
+# Everything else in `hyperparameters` must be identical between the two arms.
+C2_NOT_A_FACTOR = ("update_epochs", "env_id", "seed", "csv_out", "tb_out")
 
 
 def verify_run(path, root=REPO):
@@ -62,6 +66,19 @@ def verify_baseline(root=REPO, run_ids=None):
     configs = [verify_run(root / "runs" / rid, root) for rid in run_ids]
     if {config["env"] for config in configs} != set(ENVS):
         raise ValueError("W2 environment matrix is incomplete")
+    # The executed source is identified by the hashes in each run's config.json.
+    # Later weeks legitimately edit shared files (W3 added the KL-penalty flags to
+    # src/ppo_args.py), so drift against the current worktree is reported, not
+    # failed: that comparison detects an unnoticed substitution, not evolution.
+    hashes = [config["source_sha256"] for config in configs]
+    if any(digests != hashes[0] for digests in hashes[1:]):
+        raise ValueError("the three W2 runs executed different training sources")
+    drifted = sorted(name for name, digest in hashes[0].items()
+                     if (REPO / name).exists()
+                     and hashlib.sha256((REPO / name).read_bytes()).hexdigest() != digest)
+    if drifted:
+        print(f"NOTE: the W2 runs executed sources that changed later (declared in "
+              f"docs/deviations.md): {', '.join(drifted)}", file=sys.stderr)
     for config in configs:
         if config["seed"] != 0 or config["variant"] != "clip0.2" or config["smoke"]:
             raise ValueError("W2 requires seed 0, clip0.2, non-smoke runs")
@@ -70,9 +87,6 @@ def verify_baseline(root=REPO, run_ids=None):
                 raise ValueError(f"baseline mismatch: {key}")
         if config["packages"].get("gymnasium") != "0.29.1" or config["packages"].get("mujoco") != "3.1.6":
             raise ValueError("baseline simulator versions differ from frozen versions")
-        for name, digest in config["source_sha256"].items():
-            if hashlib.sha256((REPO / name).read_bytes()).hexdigest() != digest:
-                raise ValueError(f"baseline source differs from current file: {name}")
         with (root / "runs" / config["run_id"] / "progress.csv").open(encoding="utf-8", newline="") as handle:
             for row in csv.DictReader(handle):
                 for key in ("episode_return", "episode_length", "explained_variance"):
@@ -118,16 +132,20 @@ def verify_c2(root=REPO, run_ids=None):
         if config.get("label") not in (None, f"k{epochs}"):
             raise ValueError("recorded label disagrees with update_epochs")
     # Environment and seed are supposed to differ across cells; the arms within a
-    # cell must not differ in anything but update_epochs.
+    # cell must not differ in anything but update_epochs. Output paths are excluded
+    # by construction (they encode the run directory).
     reference = dict(configs[0]["hyperparameters"])
-    for key in ("update_epochs", "env_id", "seed"):
+    for key in C2_NOT_A_FACTOR:
         reference.pop(key, None)
     for config in configs[1:]:
         candidate = dict(config["hyperparameters"])
-        for key in ("update_epochs", "env_id", "seed"):
+        for key in C2_NOT_A_FACTOR:
             candidate.pop(key, None)
         if candidate != reference:
-            raise ValueError(f"more than update_epochs differs: {config['run_id']}")
+            differing = sorted(key for key in set(candidate) | set(reference)
+                               if candidate.get(key) != reference.get(key))
+            raise ValueError(f"more than update_epochs differs: {config['run_id']} "
+                             f"({', '.join(differing)})")
     if len({config["threads"] for config in configs}) != 1:
         raise ValueError("C2 thread counts differ")
     if any(config["packages"] != configs[0]["packages"] for config in configs):

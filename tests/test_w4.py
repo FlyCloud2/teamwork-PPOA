@@ -48,6 +48,9 @@ def write_run(root, env, seed, variant="clip0.2", label="", epochs=10, returns=(
             "num_steps": num_steps, "num_minibatches": 32, "update_epochs": epochs,
             "learning_rate": learning_rate, "batch_size": num_steps,
             "minibatch_size": num_steps // 32, "num_updates": updates,
+            # Real runs record their output paths here; they must not count as a
+            # factor in the C2 comparison.
+            "csv_out": str(path / "progress.csv"), "tb_out": str(path / "tensorboard"),
         },
         "packages": {"torch": "2.4.1", "gymnasium": "0.29.1", "mujoco": "3.1.6"},
         "host": {"platform": "test", "python": "3.10", "cpu_count": 1},

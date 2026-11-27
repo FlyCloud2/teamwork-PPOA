@@ -33,6 +33,24 @@ matrix:
   total_timesteps: 1000000                          # 每个环境，与论文一致
   smoke_timesteps: 20000                            # 只用于 W1 验证管线，永不进入报告
 
+# W4 的 C2 矩阵：只动一个因子（同一 batch 重复几个 epoch）。
+# 两端由同一台机器、同一依赖、同一预算产生，所以 K 是唯一的候选解释；
+# 论文从未消融 K，这也是 W5 单因子扩展的起点。
+c2_matrix:
+  factor: update_epochs
+  arms: [1, 10]
+  variant: clip0.2              # 论文默认的裁剪目标，只换 K
+  envs: [HalfCheetah-v4, Hopper-v4, Walker2d-v4]
+  seeds: [0, 1, 2]
+  total_timesteps: 1000000
+  label_pattern: "k{epochs}"    # run_id: ..._<env>_seed<s>_clip0.2_k1_full
+  jobs: 9                       # 本机 20 逻辑核，每个进程 1 个 OMP 线程
+  threads: 1
+
+# 论文 Table 1 的原始数字（7 任务、归一化分数）单独放在一个机器可读文件里，
+# 由 scripts/make_table.py 读取；任何脚本都不内嵌这些数字。
+paper_reference: configs/paper_table1.json
+
 # 代理目标变体。用字符串（而不是布尔）保存，这样 W3 增加
 # 自适应 eps / 非对称裁剪时不用改 schema。
 variants:

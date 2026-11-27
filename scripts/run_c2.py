@@ -53,11 +53,27 @@ def existing(root):
     return found
 
 
+def manifest(root, ids, mode, jobs, wall_time_s):
+    """The accepted matrix, with the per-run facts read back from config.json."""
+    configs = [json.loads((Path(root) / "runs" / rid / "config.json").read_text(encoding="utf-8"))
+               for rid in ids]
+    return {
+        "created": dt.datetime.now().isoformat(timespec="seconds"),
+        "run_ids": ids, "variant": C2_VARIANT, "epochs": list(C2_EPOCHS), "mode": mode,
+        "jobs": jobs, "threads_per_run": configs[0]["threads"],
+        "requested_steps_per_run": C2_STEPS,
+        "wall_time_s": None if wall_time_s is None else round(wall_time_s, 1),
+        "status": "verified",
+    }
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--jobs", type=int, default=6, help="concurrent processes (1-18)")
     parser.add_argument("--threads", type=int, default=1, help="OMP/MKL threads per process")
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--verify-existing", action="store_true",
+                        help="skip training: verify the existing 18 runs and rewrite the manifest")
     parser.add_argument("--output-root", type=Path, default=REPO)
     args = parser.parse_args()
     if not 1 <= args.jobs <= len(ENVS) * len(SEEDS) * len(C2_EPOCHS):
@@ -68,10 +84,25 @@ def main():
     if args.dry_run:
         print(json.dumps(commands, indent=2))
         return 0
+    root = args.output_root.resolve()
+    # Re-verification exists so that a verifier fix never needs hours of re-training.
+    if args.verify_existing:
+        ids = sorted(existing(root))
+        expected = len(ENVS) * len(SEEDS) * len(C2_EPOCHS)
+        if len(ids) != expected:
+            parser.error(f"--verify-existing needs {expected} runs, found {len(ids)}")
+        try:
+            verify_c2(root, ids)
+        except (OSError, ValueError, KeyError) as exc:
+            print(f"C2 verification failed: {exc}")
+            return 1
+        atomic_json(root / "logs" / "w4_c2.json",
+                    manifest(root, ids, "verified-existing", None, None))
+        print(f"C2 matrix verified from {len(ids)} existing runs; manifest: logs/w4_c2.json")
+        return 0
     for package, version in PACKAGES:
         if md.version(package).split("+")[0] != version:
             parser.error(f"{package} must be {version}")
-    root = args.output_root.resolve()
     # A duplicated cell would make every summary ambiguous, so refuse to start.
     already = existing(root)
     if already:
@@ -90,13 +121,8 @@ def main():
     except (OSError, ValueError, KeyError) as exc:
         print(f"C2 verification failed: {exc}")
         return 1
-    atomic_json(root / "logs" / "w4_c2.json", {
-        "created": dt.datetime.now().isoformat(timespec="seconds"), "run_ids": ids,
-        "variant": C2_VARIANT, "epochs": list(C2_EPOCHS),
-        "jobs": args.jobs, "threads_per_run": args.threads,
-        "requested_steps_per_run": C2_STEPS,
-        "wall_time_s": round(time.monotonic() - started, 1), "status": "verified",
-    })
+    atomic_json(root / "logs" / "w4_c2.json",
+                manifest(root, ids, "launched", args.jobs, time.monotonic() - started))
     print(f"C2 matrix complete and verified ({len(ids)} runs, "
           f"{(time.monotonic() - started) / 60:.1f} min); manifest: logs/w4_c2.json")
     return 0

@@ -40,7 +40,7 @@ def main():
               "", "## Recheck", "", "```powershell", "python -m unittest discover -s tests -v", "python scripts/verify_runs.py --baseline",
               "python scripts/plot.py --baseline --out figures/w2_baseline.png", "python scripts/summarize_baseline.py", "```", "",
               "The original failed Unicode-path smoke remains in the index with status `failed`; the successful 20,000-step smoke is separate. Neither is part of the accepted matrix.",
-              "The runs started from a modified worktree based on `bcb3bc9`. Their SHA-256 source fingerprints match the delivered training files; `git_dirty` is recorded honestly.", ""]
+              "The runs started from a modified worktree based on `bcb3bc9`. Each run records the SHA-256 of the training sources it executed, and the three hashes agree; `src/ppo_args.py` and `src/ppo_continuous_action.py` were edited in W3 (KL-penalty flags), so the current files no longer match the executed W2 sources. `scripts/verify_runs.py --baseline` reports that drift instead of failing, and `git_dirty` is recorded honestly.", ""]
     path = REPO / "docs" / "w2_baseline.md"
     path.write_text("\n".join(lines), encoding="utf-8", newline="\n")
     print(f"wrote {path}")

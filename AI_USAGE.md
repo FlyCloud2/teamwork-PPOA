@@ -41,3 +41,32 @@ changes nothing).
 Human review/sign-off: pending. The W3 owner has not yet confirmed a line-by-line
 reading of the KL-penalty implementation, and this file does not claim otherwise.
 
+## 2026-11-27: W4 / C2 and the Paper-vs-Ours table
+
+An AI assistant drafted, at the project owner's request, the code that W4 needed
+and executed the C2 matrix:
+
+- `scripts/run.py --label`, `scripts/evidence.py`, `scripts/run_c2.py`,
+  `scripts/verify_runs.py --c2`, `scripts/summarize_c2.py`, `scripts/plot_c2.py`,
+  `scripts/make_table.py`, `scripts/make_all.py` and `tests/test_w4.py`;
+- the generated `docs/paper_vs_ours.md`, `logs/c2_summary.json` and
+  `logs/paper_vs_ours.json`;
+- the 18 C2 runs (K = 1 and K = 10, 3 environments × 3 seeds × 1,000,000 steps)
+  were launched by the assistant through `scripts/run_c2.py --jobs 9` on the
+  project owner's machine.
+
+No number in the W4 documents is typed by hand: every table and figure reads
+`runs/<id>/progress.csv` through the scripts above, and `scripts/make_all.py`
+regenerates all of them. Prose that is *analysis* rather than measurement — the
+reading of the C2 result, the re-normalisation confound carried by
+`update_epochs > 1`, and the warning that the adaptive-KL tier is inconclusive —
+is marked as such in `docs/w4_c2.md` and the report draft.
+
+The assistant did not modify `src/ppo_args.py` or `src/ppo_continuous_action.py`
+for W4; both arms run the same trainer, and each run's `config.json` records the
+source hashes.
+
+Human review/sign-off: pending. The guidance published in the report's
+contribution section, and the deviation table, still need a human read before the
+W7 submission.
+
