@@ -7,8 +7,8 @@
 
 | | |
 |---|---|
-| 今天 | 2026-11-27（周五） |
-| 当前周 | **W4：11/23 – 11/29** |
+| 今天 | 2026-11-28（周六） |
+| 当前周 | **W4：11/23 – 11/29**（本周交付已完成；W5 的工具已就绪，12/01 跑数） |
 | 周窗口 | 周一 00:00 – 周日 23:59（周检的统计口径就是这个窗口） |
 | 每周硬性要求 | 每人至少 1 条**已推送**的实质 commit；首行含学号 + 姓名 |
 | 分支策略 | 只推 `main`；本仓库规模不需要功能分支 |
@@ -94,6 +94,27 @@ vendored trainer；runner 侧唯一改动是 `--label`。
 W4 没有做的事：不跑 C3 的 K 扫描（W5 的事）；不重跑 C1（W3 的 27 + 18 次仍是 C1
 证据，但要说明它们来自另一台机器，见 `docs/deviations.md` 的 W4 段）。
 
+
+## W5 详细清单（工具 2026-11-28 就绪，执行排在 12/01）
+
+- [x] `scripts/run_kscan.py`：K ∈ {1, 3, 10, 20} 的单因子矩阵。K = 1、K = 10 直接复用 W4 的 18 个 run
+      （同机、同线程、同依赖；platform / threads / 精确 build 串逐字段比对，不一致就拒绝复用，不混着算）
+- [x] `scripts/verify_runs.py --kscan`：36 个 cell 的矩阵校验，除 `update_epochs` 外任何超参不同即失败
+      （与 `--c2` 共用同一个 `_verify_matrix`，C2 的判定逻辑没有被改动）
+- [x] `scripts/summarize_kscan.py`：4 档 × 3 环境的 mean±std、末 50 次更新诊断量、逐环境排名
+      → `logs/w5_extension_summary.json`
+- [x] `scripts/plot_c2.py` 新增 `--name`：4 档图写到 `figures/w5_kscan_*.png`，不会覆盖 C2 的图
+- [x] `tests/test_w5.py` 12 项；全量回归 26 → 38 全绿
+- [x] 冒烟验证 K = 3 训练路径：`run.py --update-epochs 3 --smoke` → rc = 0，20,000 步 21.1 s
+- [ ] **12/01 执行**：`python scripts/run_kscan.py --jobs 9 --threads 1`
+      → 只跑 K = 3、K = 20 共 18 次；按 W4 实测（K = 1 21.3 min、K = 10 29.5 min）估计 65–75 分钟
+- [ ] 跑完验收：`python scripts/verify_runs.py --kscan` → `python scripts/summarize_kscan.py`
+      → `python scripts/plot_c2.py --arms 1 3 10 20 --name w5_kscan`
+- [ ] 写 `docs/w5_extension.md`：一句话结论 + 图，对照论文 Table 3 的 K = 10 默认值
+- [ ] 补 `docs/deviations.md` 的 W5 段；把 `docs/report.md` §3.4 的 Extension 占位换成实测数字
+
+动机（写报告时要用）：论文 Table 3 固定 K = 10 且从未消融；W4 已证明 K = 1 时 `clipfrac` 全为 0.000、
+`approx_kl` 低两个数量级。扫描要回答的是：K = 10 是不是一个承重的好默认值，加到 20 是继续变好还是开始反噬。
 
 ## W1 详细清单（历史）
 

@@ -26,6 +26,11 @@ C2_STEPS = 1_000_000
 # identify the cell, and the output paths necessarily encode the run directory.
 # Everything else in `hyperparameters` must be identical between the two arms.
 C2_NOT_A_FACTOR = ("update_epochs", "env_id", "seed", "csv_out", "tb_out")
+# [REPRO] W5 / extension：同一个矩阵，只把 K（update_epochs）换成扫描集合。
+# K = 1 与 K = 10 复用 W4/C2 的 run，因此这两项必须与 C2_EPOCHS 保持一致。
+KSCAN_EPOCHS = (1, 3, 10, 20)
+KSCAN_VARIANT = C2_VARIANT
+KSCAN_STEPS = C2_STEPS
 
 
 def verify_run(path, root=REPO):
@@ -99,37 +104,36 @@ def verify_baseline(root=REPO, run_ids=None):
     return configs
 
 
-def verify_c2(root=REPO, run_ids=None):
-    """W4 / C2: 3 environments x 3 seeds x update_epochs {1, 10}, one factor changed.
+def _verify_matrix(root, run_ids, epochs, tag):
+    """3 environments x 3 seeds x ``epochs``, one factor changed.
 
-    Both arms must come from the same machines, thread count and package set;
-    every hyperparameter except ``update_epochs`` must be identical. That is what
-    makes "K" the only candidate explanation for a difference.
+    Every hyperparameter except ``update_epochs`` must be identical across cells,
+    and all runs must come from the same platform, thread count and package set.
+    That is what makes the epoch count the only candidate explanation for a
+    difference, whether the matrix has two arms (W4/C2) or a whole sweep (W5).
     """
-    if run_ids is None:
-        manifest = json.loads((root / "logs" / "w4_c2.json").read_text(encoding="utf-8"))
-        run_ids = manifest["run_ids"]
-    expected = len(ENVS) * len(SEEDS) * len(C2_EPOCHS)
+    epochs = tuple(epochs)
+    expected = len(ENVS) * len(SEEDS) * len(epochs)
     if len(run_ids) != expected or len(set(run_ids)) != expected:
-        raise ValueError(f"C2 requires exactly {expected} distinct runs")
+        raise ValueError(f"{tag} requires exactly {expected} distinct runs")
     configs = [verify_run(root / "runs" / rid, root) for rid in run_ids]
     cells = {(config["env"], config["seed"], config["hyperparameters"]["update_epochs"])
              for config in configs}
-    wanted = {(env, seed, epochs) for env in ENVS for seed in SEEDS for epochs in C2_EPOCHS}
+    wanted = {(env, seed, value) for env in ENVS for seed in SEEDS for value in epochs}
     if cells != wanted:
-        raise ValueError(f"C2 matrix incomplete: missing {sorted(wanted - cells)}, "
+        raise ValueError(f"{tag} matrix incomplete: missing {sorted(wanted - cells)}, "
                          f"unexpected {sorted(cells - wanted)}")
     for config in configs:
         if config["smoke"] or config["variant"] != C2_VARIANT:
-            raise ValueError("C2 requires non-smoke clip0.2 runs")
-        if config["hyperparameters"]["update_epochs"] not in C2_EPOCHS:
-            raise ValueError("C2 update_epochs must be 1 or 10")
+            raise ValueError(f"{tag} requires non-smoke {C2_VARIANT} runs")
+        if config["hyperparameters"]["update_epochs"] not in epochs:
+            raise ValueError(f"{tag} update_epochs must be one of {list(epochs)}")
         if config["steps"] != C2_STEPS:
-            raise ValueError("C2 requires exactly 1,000,000 steps per run")
-        epochs = config["hyperparameters"]["update_epochs"]
-        if f"_k{epochs}_full" not in config["run_id"]:
-            raise ValueError(f"run id does not encode update_epochs={epochs}: {config['run_id']}")
-        if config.get("label") not in (None, f"k{epochs}"):
+            raise ValueError(f"{tag} requires exactly 1,000,000 steps per run")
+        value = config["hyperparameters"]["update_epochs"]
+        if f"_k{value}_full" not in config["run_id"]:
+            raise ValueError(f"run id does not encode update_epochs={value}: {config['run_id']}")
+        if config.get("label") not in (None, f"k{value}"):
             raise ValueError("recorded label disagrees with update_epochs")
     # Environment and seed are supposed to differ across cells; the arms within a
     # cell must not differ in anything but update_epochs. Output paths are excluded
@@ -147,12 +151,37 @@ def verify_c2(root=REPO, run_ids=None):
             raise ValueError(f"more than update_epochs differs: {config['run_id']} "
                              f"({', '.join(differing)})")
     if len({config["threads"] for config in configs}) != 1:
-        raise ValueError("C2 thread counts differ")
+        raise ValueError(f"{tag} thread counts differ")
     if any(config["packages"] != configs[0]["packages"] for config in configs):
-        raise ValueError("C2 package versions differ")
+        raise ValueError(f"{tag} package versions differ")
     if len({config["host"]["platform"] for config in configs}) != 1:
-        raise ValueError("C2 runs were produced on different platforms")
+        raise ValueError(f"{tag} runs were produced on different platforms")
     return configs
+
+
+def verify_c2(root=REPO, run_ids=None):
+    """W4 / C2: 3 environments x 3 seeds x update_epochs {1, 10}, one factor changed.
+
+    Both arms must come from the same machines, thread count and package set;
+    every hyperparameter except ``update_epochs`` must be identical. That is what
+    makes "K" the only candidate explanation for a difference.
+    """
+    if run_ids is None:
+        manifest = json.loads((root / "logs" / "w4_c2.json").read_text(encoding="utf-8"))
+        run_ids = manifest["run_ids"]
+    return _verify_matrix(root, run_ids, C2_EPOCHS, "C2")
+
+
+def verify_kscan(root=REPO, run_ids=None, epochs=KSCAN_EPOCHS):
+    """W5 / extension: the same matrix with ``update_epochs`` swept over K values.
+
+    The sweep shares its K = 1 and K = 10 cells with W4/C2, so those runs are
+    verified here again rather than retrained; the check is the same one C2 passed.
+    """
+    if run_ids is None:
+        manifest = json.loads((root / "logs" / "w5_extension.json").read_text(encoding="utf-8"))
+        run_ids = manifest["run_ids"]
+    return _verify_matrix(root, run_ids, epochs, "W5/K-scan")
 
 
 def main():
@@ -160,15 +189,18 @@ def main():
     parser.add_argument("--run", type=Path)
     parser.add_argument("--baseline", action="store_true")
     parser.add_argument("--c2", action="store_true")
+    parser.add_argument("--kscan", action="store_true")
     parser.add_argument("--root", type=Path, default=REPO)
     args = parser.parse_args()
-    if not args.run and not args.baseline and not args.c2:
-        parser.error("choose --run, --baseline or --c2")
+    if not args.run and not args.baseline and not args.c2 and not args.kscan:
+        parser.error("choose --run, --baseline, --c2 or --kscan")
     try:
         if args.baseline:
             configs = verify_baseline(args.root)
         elif args.c2:
             configs = verify_c2(args.root)
+        elif args.kscan:
+            configs = verify_kscan(args.root)
         else:
             configs = [verify_run(args.run, args.root)]
     except (OSError, ValueError, KeyError) as exc:

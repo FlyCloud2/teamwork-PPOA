@@ -3,11 +3,16 @@
 
 Reads runs/*/progress.csv only -- no hand-entered numbers. Two outputs:
 
-  figures/c2_epochs.png   grouped bars, mean +- std over seeds of the same metric
-                          the summary table uses (last ten logged episode returns),
-                          with each seed drawn as a point
-  figures/c2_curves.png   learning curves, per-update episode return smoothed over
-                          a rolling window, mean across seeds with a min/max band
+  figures/<name>_epochs.png   grouped bars, mean +- std over seeds of the same
+                              metric the summary table uses (last ten logged
+                              episode returns), with each seed drawn as a point
+  figures/<name>_curves.png   learning curves, per-update episode return smoothed
+                              over a rolling window, mean across seeds with a
+                              min/max band
+
+``--arms`` selects which K values to draw and ``--name`` selects the output
+prefix, so the W5 sweep (``--arms 1 3 10 20 --name w5_kscan``) can be plotted
+without overwriting the accepted C2 figures.
 
 Raw training returns sampled at update boundaries are NOT evaluation scores.
 """
@@ -64,6 +69,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", default=str(REPO))
     parser.add_argument("--arms", nargs="+", type=int, default=list(ARMS))
+    parser.add_argument("--name", default="c2", help="output prefix under figures/")
     args = parser.parse_args()
 
     fig, axes = plt.subplots(1, len(ENVS), figsize=(4.6 * len(ENVS), 4.2))
@@ -87,9 +93,9 @@ def main():
         axis.set_ylabel("tail-10 training return")
         axis.grid(axis="y", alpha=0.3)
     axes[0].legend(fontsize=8)
-    fig.suptitle("C2: update_epochs (K) comparison, mean +- std over 3 seeds; dots are seeds")
+    fig.suptitle(f"{args.name.upper()}: update_epochs (K) comparison, mean +- std over 3 seeds; dots are seeds")
     fig.tight_layout()
-    out_bars = REPO / "figures" / "c2_epochs.png"
+    out_bars = REPO / "figures" / f"{args.name}_epochs.png"
     out_bars.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out_bars, dpi=150)
     plt.close(fig)
@@ -118,9 +124,9 @@ def main():
         axis.set_ylabel(f"episode return (rolling {WINDOW})")
         axis.grid(alpha=0.3)
     axes[0].legend(fontsize=8)
-    fig.suptitle("C2: learning curves, mean across seeds (band = min/max)")
+    fig.suptitle(f"{args.name.upper()}: learning curves, mean across seeds (band = min/max)")
     fig.tight_layout()
-    out_curves = REPO / "figures" / "c2_curves.png"
+    out_curves = REPO / "figures" / f"{args.name}_curves.png"
     fig.savefig(out_curves, dpi=150)
     plt.close(fig)
 
