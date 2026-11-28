@@ -70,3 +70,18 @@ Human review/sign-off: pending. The guidance published in the report's
 contribution section, and the deviation table, still need a human read before the
 W7 submission.
 
+## 2026-11-28: report structure gap (Data section) and hook activation
+
+At 伍俊晔's (2260032100) request an AI assistant added the `Data and initial
+weights` subsection to `docs/report.md` (the report structure requires a data
+statement even when no dataset or pre-trained weight is used), renumbered the
+following two subsections and their two cross-references, and added the
+one-time `git config core.hooksPath .githooks` step to the README so that the
+`commit-msg` hook actually runs on a fresh clone.
+
+No experiment, run, figure or table was touched: `runs/`, `logs/` and
+`figures/` are byte-identical, and the numbers in `docs/report.md` are
+unchanged. The addition is documentation only.
+
+Human review/sign-off: pending.
+

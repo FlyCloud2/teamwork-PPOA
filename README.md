@@ -55,6 +55,7 @@ PPO 的贡献是一族代理目标：它不求解带约束的优化问题，也�
 ## 快速开始
 
 需要 Python 3.10。直接依赖钉在 [`requirements.txt`](requirements.txt)，本次实测的完整依赖冻结在 [`requirements-lock.txt`](requirements-lock.txt)，机器信息见 [`env.txt`](env.txt)。Windows 上 MuJoCo 的虚拟环境必须放在纯英文路径，真实安装过程见 [`docs/setup.md`](docs/setup.md)。
+克隆后先执行一次 `git config core.hooksPath .githooks`：启用 `commit-msg` 钩子，首行缺学号或姓名会被直接拒绝（每个 clone 一次）。
 
 ```powershell
 python -m pip install -r requirements-lock.txt

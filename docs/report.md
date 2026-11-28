@@ -47,8 +47,8 @@ Our project asks three questions, one per week of experiments:
   sit at a good point of a K sweep?
 
 We deliberately reduce scale: 3 of the paper's 7 tasks, 3 seeds per setting, and no
-evaluation-episode protocol (our metric is the training return, see §2.4). This is
-declared throughout and recorded in the deviation log (§2.5).
+evaluation-episode protocol (our metric is the training return, see §2.5). This is
+declared throughout and recorded in the deviation log (§2.6).
 
 ## 2 Reproduction setup
 
@@ -64,7 +64,7 @@ declared throughout and recorded in the deviation log (§2.5).
 
 The paper's absolute scores are normalised per task with a random-policy zero point
 and an unpublished best-result scale, over 7 tasks. Ours are raw returns on 3
-tasks, so §2.4 and `docs/paper_vs_ours.md` compare **orderings**, never magnitudes.
+tasks, so §2.5 and `docs/paper_vs_ours.md` compare **orderings**, never magnitudes.
 
 ### 2.2 Code base, upstream and pinned versions
 
@@ -102,7 +102,21 @@ is recorded in the deviation log.
 Smoke runs (20,000 steps) exist to prove the pipeline but are excluded from every
 result table; failed runs stay in the run index with status `failed`.
 
-### 2.4 Measurement definitions
+### 2.4 Data and initial weights
+
+The paper's MuJoCo experiments use no dataset, no train/validation split and no
+pre-trained weights, and neither does this reproduction. The three tasks are
+procedural simulators shipped as Python packages (`gymnasium==0.29.1`,
+`mujoco==3.1.6`, pinned in `requirements-lock.txt`); installing the lock file is
+the only data-acquisition step, and after installation no network access is
+needed. The policy and value networks are initialised randomly from the seed
+(`--seed 0/1/2`, recorded in every `config.json`); the observation and reward
+normalisation statistics are estimated online from each run's own rollouts and
+are therefore part of the run, not an artefact of a shared pre-computed
+statistics file. Nothing is downloaded at train time, so a run is described
+completely by its command line, seed and source hashes.
+
+### 2.5 Measurement definitions
 
 * **Score of a run**: the mean raw training return over the last ten logged
   episodes; the trainer logs the most recent completed episode's return at each
@@ -116,7 +130,7 @@ result table; failed runs stay in the run index with status `failed`.
   minibatches), entropy and explained variance. Under the KL-penalty arm
   `clipfrac` is a diagnostic only, not a loss term.
 
-### 2.5 Deviations
+### 2.6 Deviations
 
 `docs/deviations.md` records every departure from the paper or from the previous
 week's setting, in the required four columns (item, original setting, setting used,
