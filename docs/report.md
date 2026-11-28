@@ -387,9 +387,11 @@ script:
 
 ```powershell
 $PpoPython = 'D:\miniconda3\envs\ppo-repro\python.exe'
-& $PpoPython -m unittest discover -s tests -v          # 26 regression tests
+& $PpoPython -m unittest discover -s tests -v          # 38 regression tests
 & $PpoPython scripts/verify_runs.py --baseline         # W2 evidence
 & $PpoPython scripts/verify_runs.py --c2               # W4 evidence
+& $PpoPython scripts/run_kscan.py --dry-run            # W5 plan: 36 cells, 18 to run
+& $PpoPython scripts/verify_runs.py --kscan            # W5 evidence (once the sweep ran)
 & $PpoPython scripts/make_all.py                       # summaries, figures, tables, checks
 ```
 
