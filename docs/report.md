@@ -320,7 +320,41 @@ paper's normalisation constants are unpublished, so any normalised comparison is
 built on a different anchor; (iv) with three seeds, the seed spread is large
 (HalfCheetah clip0.2 spans 1247–3098), so only orderings, not gaps, are defensible.
 
-### 4.5 What would falsify our verdicts
+### 4.5 Quantified gaps
+
+The rubric asks for the absolute and relative difference from the paper's results.
+For the aggregate score that difference is **undefined**, so this section reports the
+number and the reason side by side rather than omitting the comparison.
+
+| Quantity | Paper (7 tasks) | Ours (3 tasks) | Absolute gap | Relative gap | Readable as a match? |
+|---|---:|---:|---:|---:|---|
+| Clipping, eps = 0.2 | +0.82 | 1.00 (best-in-task ratio) | — | — | no: different zero point and scale |
+| Adaptive KL, d_targ = 0.01 | +0.74 | 0.24 | — | — | no: same reason |
+| No clipping or penalty | -0.39 | 0.19 | — | — | no: same reason |
+| Full ordering holds in | 7/7 tasks | 2/3 tasks | -1 task | -33% of tasks | yes |
+| Each binary pair holds in | 7/7 tasks per pair | 3/3 tasks per pair | 0 tasks | 0% | yes |
+
+The paper's number is a per-task shift-and-scale against an unpublished best result,
+averaged over 21 runs; ours is a raw training return. Subtracting one from the other
+would encode the environment version, the wrapper chain and the normalisation
+constants, not a replication error, so no such number is reported here.
+
+Two relative gaps **are** comparable, and they point the same way:
+
+* **Within our own runs**: clipping beats the KL penalty by **3.26x / 2.98x / 10.95x**
+  (HalfCheetah / Hopper / Walker2d, i.e. +226% / +198% / +995%). These quotients are
+  derived from the Table 2 means, which `scripts/make_table.py` reads from
+  `logs/c1_summary.json`; no number here is typed from a plot.
+* **Within the paper's own table**: clipping beats the KL penalty by **+11%**
+  (0.82 vs 0.74).
+
+The same comparison is one to two orders of magnitude larger in our runs than in the
+paper. That disagreement is evidence about *our implementation* rather than about the
+paper's objectives, and §4.2 gives the mechanism (the KL arm collapses onto "minimise
+KL"). It is also why the middle tier is *inconclusive* rather than *not supported*:
+the size of the gap is what says the arm was not a fair test of it.
+
+### 4.6 What would falsify our verdicts
 
 * Re-run the KL arm with gradient clipping disabled, or with the beta adaptation
   driven by the KL measured before the update: if it then trains comparably to
